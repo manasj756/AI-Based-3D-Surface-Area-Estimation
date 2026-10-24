@@ -109,7 +109,7 @@ def fig_noise(df, root):
     axes[0].set_ylabel("mean absolute error (%)")
     h, l = axes[0].get_legend_handles_labels()
     fig.legend(h, l, loc="upper center", bbox_to_anchor=(0.5, 0.0), ncol=4, fontsize=8)
-    fig.suptitle("Test split: surface-area error vs noise (voxel-face counting, ~50%, omitted)", fontsize=10)
+    fig.suptitle("Test split: surface-area error vs noise (voxel-face counting, ~50%, omitted)", fontsize=10, y=1.03)
     fig.savefig(os.path.join(root, "figures", "error_vs_noise.png"))
     plt.close(fig)
 
@@ -130,7 +130,7 @@ def fig_signed(df, root):
         ax.set_xticks(range(1, len(ms) + 1), [LABEL[m] for m in ms], rotation=35, ha="right", fontsize=8)
         ax.set_title(f"{N}³ grid", fontsize=10)
     axes[0].set_ylabel("signed error (%)")
-    fig.suptitle("Test split: signed error (boxes: IQR, whiskers: 1.5 IQR)", fontsize=10)
+    fig.suptitle("Test split: signed error (boxes: IQR, whiskers: 1.5 IQR)", fontsize=10, y=1.03)
     fig.savefig(os.path.join(root, "figures", "signed_error_box.png"))
     plt.close(fig)
 
@@ -151,7 +151,7 @@ def fig_splits(df, root):
     axes[0].set_ylabel("mean absolute error (%)")
     h, l = axes[0].get_legend_handles_labels()
     fig.legend(h, l, loc="upper center", bbox_to_anchor=(0.5, 0.0), ncol=4, fontsize=8)
-    fig.suptitle("Generalisation to unseen shape families (all noise levels pooled)", fontsize=10)
+    fig.suptitle("Generalisation to unseen shape families (all noise levels pooled)", fontsize=10, y=1.03)
     fig.savefig(os.path.join(root, "figures", "heldout_families.png"))
     plt.close(fig)
 

@@ -1,0 +1,20 @@
+\begin{table}[t]
+  \centering\small
+  \caption{Test MAPE (\%) by object diameter in voxels (both resolutions pooled).}
+  \label{tab:diameter}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Method & $<16$ & 16--24 & 24--32 & 32--48 & 48--64 \\
+    \midrule
+    MC (greyscale) & 6.43 & 3.89 & 3.57 & 3.45 & 3.44 \\
+    MC (smoothed) & 24.52 & 8.08 & 4.84 & 2.53 & 1.45 \\
+    \midrule
+    MC + lookup & 4.76 & 1.78 & 1.48 & 0.67 & 0.58 \\
+    Random Forest & 1.41 & 0.39 & \textbf{0.22} & \textbf{0.13} & \textbf{0.08} \\
+    PointNet & 2.14 & 1.57 & 1.54 & 0.81 & 1.48 \\
+    3D CNN & 1.24 & 0.39 & 0.28 & 0.22 & 0.22 \\
+    CNN + features & \textbf{1.14} & \textbf{0.35} & 0.24 & 0.17 & 0.17 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

@@ -81,7 +81,7 @@ def plot(df, root):
         ax.set_xlabel("grid size N")
     h, l = axes[0].get_legend_handles_labels()
     fig.legend(h, l, loc="upper center", bbox_to_anchor=(0.5, -0.02), ncol=6, fontsize=8)
-    fig.suptitle("Bias vs resolution (voxel-face counting stays at about +50% at every N, not shown)", fontsize=10)
+    fig.suptitle("Bias vs resolution (voxel-face counting stays at about +50% at every N, not shown)", fontsize=10, y=1.03)
     fig.savefig(os.path.join(root, "figures", "bias_vs_resolution.png"))
     plt.close(fig)
 

@@ -1,0 +1,165 @@
+All results are on shapes that were not used for training or model selection: the test split of the
+five training families (301 shapes, 903 volumes per resolution) and the two held-out families
+(200 shapes each, 600 volumes per resolution). Table~\ref{tab:main} gives the overall picture.
+
+\input{tables/main}
+
+\subsection{Classical estimators}
+Voxel-face counting overestimates the area by 57\% at $32^3$ and 66\% at $64^3$. This is more than the
+50\% predicted for clean, smooth surfaces because noise at $\sigma_n=0.15$ adds isolated voxels whose
+faces also count; at that noise level the overestimate reaches 80\% at $32^3$ and 98\% at $64^3$
+(Table~\ref{tab:noise}).
+
+Marching cubes on the binary volume has a positive bias ($+9.6\%$ at $32^3$, $+14.5\%$ at $64^3$) that
+grows with resolution instead of shrinking. The resolution sweep (Fig.~\ref{fig:sweep}) shows the same
+trend from $24^3$ to $128^3$: on clean data the bias rises from $+0.5\%$ to $+8.5\%$, in line with the
+non-convergence results of Section~\ref{sec:theory}; at $\sigma_n=0.15$ it rises from $+16\%$ to
+$+34\%$, because the number of spurious noise components grows with the number of voxels.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{bias_vs_resolution.png}
+  \caption{Mean signed error ($\pm$1 s.d.) of the marching-cubes estimators against grid size for 48
+  test shapes (8 per training family plus 8 superellipsoids), rendered with the same orientation and
+  fill fraction at every $N$. Learned models are shown at the two sizes they were trained on.}
+  \label{fig:sweep}
+\end{figure}
+
+Greyscale marching cubes behaves as Section~\ref{sec:theory} predicts. Its bias is negative for small
+objects and low resolution (curvature shrinkage: $-22.9\%$ at $16^3$ and $-4.2\%$ at $32^3$ on clean data
+in the sweep) and becomes positive at high noise ($+8.6\%$ at $64^3$ and $+9.7\%$ at $128^3$ for
+$\sigma_n=0.15$). Because the two effects have opposite signs, its error is not smallest on clean data:
+at $64^3$ its test MAPE is 1.13\% on clean data, 0.86\% at $\sigma_n=0.05$ and 8.56\% at
+$\sigma_n=0.15$. Smoothing before marching cubes removes most of the noise bias (2.93\% MAPE at $64^3$,
+$\sigma_n=0.15$), but it costs 13.8\% at $32^3$, where most objects are small enough for the curvature
+shrinkage to dominate, and it erases thin tori completely (29.7\% MAPE on tori at $32^3$,
+Table~\ref{tab:family}).
+
+\subsection{Learned and calibrated corrections}
+Every correction model improves on raw greyscale marching cubes by a large factor
+(Table~\ref{tab:main}, Fig.~\ref{fig:box}). The simple lookup table, one factor per resolution and
+noise level, already reduces the test MAPE from 4.78\% to 2.97\% at $32^3$ and from 3.52\% to 0.79\% at
+$64^3$. That it works much better at $64^3$ shows that most of the remaining error at $64^3$ is a
+systematic, regime-dependent bias, while at $32^3$ the error depends strongly on the individual object.
+
+The 3D CNN reaches 0.68\% at $32^3$ and 0.26\% at $64^3$, a seven-fold and a thirteen-fold reduction
+relative to greyscale marching cubes, with a bias within $\pm0.1\%$ and $R^2$ of 0.99985 and 0.99997.
+The Random Forest on hand-crafted descriptors performs almost identically at $32^3$ (0.72\%) and is
+better at $64^3$ (0.18\%). PointNet is clearly weaker than both (1.98\% and 1.04\%): sampling 2,048 points
+from a mesh that already contains the noise artefacts throws away the intensity information that the
+volume-based models use.
+
+The hybrid network, which receives the ten Random Forest descriptors next to its image features, gives
+the lowest error at $32^3$ (0.62\%) and the second lowest at $64^3$ (0.21\%, against 0.18\% for the Random
+Forest). Its gain over the image-only CNN is small (0.06 and 0.05 percentage points), and it does not
+generalise better: on the held-out families it matches the CNN at $32^3$ (1.06\% and 1.97\%) and the
+Random Forest at $64^3$ (0.39\% and 0.52\%). Learned image features therefore add a little information
+beyond the physics-motivated descriptors on familiar shapes, but most of the correction is already
+captured by the descriptors themselves.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{signed_error_box.png}
+  \caption{Distribution of the signed error on the test split. Boxes: interquartile range; whiskers:
+  1.5 IQR. Voxel-face counting is omitted for scale.}
+  \label{fig:box}
+\end{figure}
+
+The Random Forest's feature importances explain why a small model does so well. The most important
+descriptors (impurity-based importance in brackets) are \input{tables/rf_importance}The Euler number and
+the noise estimate measure exactly the two noise effects of Section~\ref{sec:theory} (spurious components
+and surface roughening), and the ratio of smoothed to raw marching-cubes area measures how much of the
+surface responds to smoothing, which is a proxy for curvature and thin features.
+
+\paragraph{A failure case.} The error distributions are heavy-tailed at $32^3$: the standard deviation
+of the CNN error is 3.1\% although its MAPE is 0.68\%. Most of this comes from one test torus whose tube
+is 1.77 voxels thick. After the point-spread blur most of the tube stays below the iso-level, so
+greyscale marching cubes recovers only 42 of its 142 voxel$^2$ (and the smoothed volume nothing at all).
+All correction models fail on it, with errors between $-47\%$ and $-66\%$ across models and noise
+levels. A multiplicative correction of the marching-cubes area cannot recover a
+surface that is mostly missing from the mesh; structures thinner than about two voxels need a different
+approach.
+
+\subsection{Noise and object size}
+Table~\ref{tab:noise} and Fig.~\ref{fig:noise} separate the noise levels. The learned models are
+nearly insensitive to noise: at $64^3$ the CNN's MAPE goes from 0.20\% (clean) to 0.40\%
+($\sigma_n=0.15$), while greyscale marching cubes goes from 1.13\% to 8.56\%. The same holds at $32^3$
+(0.46\% to 1.02\%, against 4.73\% to 5.77\%).
+
+\input{tables/noise}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{error_vs_noise.png}
+  \caption{Test MAPE against noise level at both resolutions. Voxel-face counting (44--98\%) is omitted.}
+  \label{fig:noise}
+\end{figure}
+
+Object size matters more than grid size (Table~\ref{tab:diameter}). For objects less than 16 voxels
+across, greyscale marching cubes has a MAPE of 6.43\%, the Random Forest 1.41\%, the CNN 1.24\% and the
+hybrid 1.14\%; this is the size class in which the image-based models have the clearest advantage. For objects larger than 32 voxels the
+Random Forest is best, reaching 0.08\% above 48 voxels, and even the lookup table stays below 0.7\%.
+
+\input{tables/diameter}
+
+\subsection{Unseen shape families}
+Both held-out families stay far below the classical errors (Fig.~\ref{fig:heldout},
+Table~\ref{tab:main}). On superellipsoids, whose sharp edges and pointed tips do not occur in the
+training data, the CNN reaches 1.05\% and 0.45\% and the Random Forest 0.73\% and 0.39\%, compared with
+4.10\% and 3.38\% for greyscale marching cubes. These errors are between 1.0 and 2.2 times the test-split
+errors of the same models, so there is a measurable but moderate generalisation gap.
+
+Rough blobs are the hardest case for every method: 1.96\% (CNN) and 1.71\% (Random Forest) at $32^3$. Here
+the corrections are biased low (mean signed error $-1.8\%$ and $-1.5\%$), as expected: the training
+shapes are smooth, so the models have never learned to add back area hidden in sub-voxel roughness. At
+$64^3$, where more of the roughness is resolved, the error falls to about 0.5\% and the bias vanishes.
+Table~\ref{tab:family} breaks the results down by family.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{heldout_families.png}
+  \caption{MAPE on the test split and on the two held-out families (all noise levels pooled).}
+  \label{fig:heldout}
+\end{figure}
+
+\input{tables/family}
+
+\subsection{Training behaviour}
+Figure~\ref{fig:curves} shows the validation error during training. The $32^3$ CNN had nearly
+converged after 40 epochs. Both $64^3$ CNN variants, limited to 15 epochs by the compute budget, reached
+their best validation error in the last epoch, so their results are likely not the best these
+architectures can reach.
+PointNet's validation error flattens early at both resolutions.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.6\linewidth]{training_curves.png}
+  \caption{Validation MAPE during training (log scale).}
+  \label{fig:curves}
+\end{figure}
+
+\subsection{Which estimator to use}
+\begin{table}[t]
+  \centering\small
+  \caption{Recommended estimator by regime, based on the test results.}
+  \label{tab:regime}
+  \begin{tabular}{p{4.6cm}p{9.6cm}}
+    \toprule
+    Regime & Recommendation \\
+    \midrule
+    Any noise level, any size & Do not use voxel-face counting or binary marching cubes for absolute area;
+      their bias is large and does not decrease with resolution. \\
+    Clean data, large objects & Greyscale marching cubes is within about 1\% at $64^3$; a per-regime
+      correction factor brings it below 1\%. \\
+    Noisy data ($\sigma_n = 0.15$) & Raw marching cubes overestimates by up to 9--10\%. Smoothing helps only
+      for large objects; a learned correction (CNN or Random Forest) gives 0.3--1.1\%. \\
+    Small objects ($<16$ voxels) & Use an image-based model (hybrid 1.14\%, CNN 1.24\%, against 6.43\% for
+      marching cubes); smoothing is harmful. \\
+    Structures thinner than $\sim$2 voxels & No method tested here is reliable. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+Table~\ref{tab:regime} summarises when a learned correction is worth the effort. Its benefit is largest
+where the classical methods are weakest: small objects, coarse grids and noisy data. For large, clean
+objects greyscale marching cubes is already accurate to about 1\%, and the gain from a learned model,
+while real, matters only when sub-percent accuracy is needed.

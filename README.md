@@ -4,9 +4,25 @@ Surface area measured from voxelized CT data is biased. Counting exposed voxel
 faces overestimates the area by about 50% at every resolution, and marching
 cubes is biased by thresholding, noise and the finite voxel size. This project
 builds synthetic CT-like volumes of shapes with exactly known surface area and
-trains a 3D CNN and a PointNet to predict a multiplicative correction to the
-greyscale marching-cubes area. Both are benchmarked against four classical
-estimators and two calibrated baselines.
+trains a 3D CNN, a PointNet and a hybrid CNN (volume + hand-crafted descriptors)
+to predict a multiplicative correction to the greyscale marching-cubes area. They
+are benchmarked against four classical estimators and two calibrated baselines
+(a per-regime lookup factor and a Random Forest).
+
+## Main result (test shapes never seen in training, mean absolute error)
+
+| Method | 32³ | 64³ |
+|---|---|---|
+| Voxel-face counting | 56.71% | 65.54% |
+| Marching cubes, binary | 10.38% | 14.49% |
+| Marching cubes, greyscale | 4.78% | 3.52% |
+| MC + lookup factor | 2.97% | 0.79% |
+| PointNet | 1.98% | 1.04% |
+| Random Forest | 0.72% | **0.18%** |
+| 3D CNN | 0.68% | 0.26% |
+| Hybrid CNN + features | **0.62%** | 0.21% |
+
+Full tables: `results/tables.md`; article: `paper/main.pdf`.
 
 ## Repository layout
 
@@ -23,11 +39,16 @@ src/
   evaluate.py       metrics, tables and figures for all estimators
   sweep.py          bias-vs-resolution sweep, N = 16 ... 128
   infer.py, demo.py estimate the area of a single volume
+  figures_extra.py  explanatory figures (example slices, meshes, face-count theory)
+  curvature_check.py  curvature-bias prediction vs measurement on spheres
+  report_tables.py  LaTeX tables for the article, generated from results/
 tests/
   test_reference.py checks of the reference-area and voxelization pipeline
 weights/            trained model weights
 results/            CSV tables of predictions and metrics, tables.md
 figures/            plots used in the report
+paper/              preprint article (LaTeX source and main.pdf)
+slides/             presentation (.pptx) and the script that builds it
 ```
 
 ## Setup
@@ -47,9 +68,17 @@ python src/train.py --model cnn --N 32
 python src/train.py --model cnn --N 64
 python src/train.py --model pointnet --N 32
 python src/train.py --model pointnet --N 64
+python src/train.py --model cnnfeat --N 32                   # hybrid: volume + descriptors
+python src/train.py --model cnnfeat --N 64
 python src/evaluate.py                                       # tables and figures
 python src/sweep.py --per_family 8 --workers 6               # resolution sweep
+python src/curvature_check.py                                # sphere curvature table
+python src/figures_extra.py                                  # explanatory figures
+python src/report_tables.py                                  # LaTeX tables for the article
 ```
+
+Training used PyTorch's MPS backend on an Apple-silicon laptop (about 60 s per
+epoch for the 32³ CNN, about 7 min per epoch at 64³).
 
 Demo on a synthetic shape with known area, or on your own `.npy` volume:
 

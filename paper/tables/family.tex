@@ -1,0 +1,22 @@
+\begin{table}[t]
+  \centering\small
+  \caption{MAPE (\%) by shape family (test split and held-out families, all noise levels). $^\dagger$Held out from training. Best per row and resolution in bold.}
+  \label{tab:family}
+  \setlength{\tabcolsep}{3.5pt}\footnotesize
+  \resizebox{\linewidth}{!}{\begin{tabular}{lrrrrrrrrrrrr}
+    \toprule
+    & \multicolumn{6}{c}{$32^3$} & \multicolumn{6}{c}{$64^3$} \\
+    \cmidrule(lr){2-7}\cmidrule(lr){8-13}
+    Family & MC grey & Lookup & RF & PointNet & 3D CNN & Hybrid & MC grey & Lookup & RF & PointNet & 3D CNN & Hybrid \\
+    \midrule
+    Sphere & 3.46 & 1.98 & \textbf{0.19} & 2.21 & 0.23 & 0.22 & 3.41 & 0.39 & \textbf{0.06} & 1.14 & 0.13 & 0.14 \\
+    Ellipsoid & 4.22 & 2.36 & 0.52 & 2.00 & 0.45 & \textbf{0.44} & 3.45 & 0.48 & \textbf{0.20} & 1.20 & 0.28 & 0.22 \\
+    Cylinder & 5.99 & 4.75 & 1.15 & 2.60 & 0.78 & \textbf{0.64} & 3.93 & 2.42 & 0.31 & 1.58 & 0.37 & \textbf{0.30} \\
+    Torus & 6.89 & 5.26 & 1.90 & 2.83 & 1.85 & \textbf{1.79} & 3.53 & 0.87 & 0.26 & 1.00 & 0.28 & \textbf{0.22} \\
+    Smooth blob & 4.12 & 2.03 & \textbf{0.35} & 1.45 & 0.41 & 0.36 & 3.43 & 0.41 & \textbf{0.11} & 0.79 & 0.23 & 0.18 \\
+    \midrule
+    Superellipsoid$^\dagger$ & 4.10 & 1.87 & \textbf{0.73} & 1.54 & 1.05 & 1.06 & 3.38 & 0.43 & 0.39 & 0.95 & 0.45 & \textbf{0.39} \\
+    Rough blob$^\dagger$ & 5.27 & 3.22 & \textbf{1.71} & 3.00 & 1.96 & 1.97 & 3.57 & 1.09 & \textbf{0.48} & 1.32 & 0.55 & 0.52 \\
+    \bottomrule
+  \end{tabular}}
+\end{table}

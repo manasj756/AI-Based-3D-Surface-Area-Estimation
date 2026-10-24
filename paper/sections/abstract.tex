@@ -1,0 +1,15 @@
+Surface area measured from voxelized CT data is biased: voxel-face counting overestimates it by about
+50\% at every resolution, marching cubes on binary data does not converge as the grid is refined, and
+marching cubes on greyscale data is pulled down by curvature and pushed up by noise. We build a
+synthetic CT-like benchmark of 2,400 shapes from seven families, with reference surface areas that are
+exact or converged to better than $10^{-4}$, rendered as 14,400 volumes at $32^3$ and $64^3$ with three
+noise levels. On this benchmark we compare four classical estimators, a per-regime lookup correction,
+a Random Forest on hand-crafted descriptors, a 3D CNN, a PointNet and a hybrid CNN that also receives the
+descriptors. All learned models predict a multiplicative correction to the greyscale marching-cubes area.
+A simple heat-equation argument predicts the curvature bias of greyscale marching cubes on spheres
+closely ($-0.56\%$ predicted against $-0.62\%$ measured at $32^3$). On held-out test shapes, greyscale marching cubes has a
+mean absolute error of 4.78\% ($32^3$) and 3.52\% ($64^3$); the best corrections reach 0.62\% (hybrid,
+$32^3$) and 0.18\% (Random Forest, $64^3$), and stay below 2\% on two shape families never seen in
+training. The Random Forest matches the deep models overall, the image-based models are best on objects
+smaller than 16 voxels, and PointNet is clearly weaker. No method recovers structures thinner than about
+two voxels.

@@ -1,0 +1,24 @@
+\begin{table}[t]
+  \centering\small
+  \caption{Surface-area error (\%) on held-out shapes, all noise levels pooled. MAPE: mean absolute error; bias: mean signed error. The two right-hand blocks are shape families never seen in training (MAPE). Best value per column in bold.}
+  \label{tab:main}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{lrrrrrrrr}
+    \toprule
+    & \multicolumn{2}{c}{Test MAPE} & \multicolumn{2}{c}{Test bias} & \multicolumn{2}{c}{Superellipsoid} & \multicolumn{2}{c}{Rough blob} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+    Method & $32^3$ & $64^3$ & $32^3$ & $64^3$ & $32^3$ & $64^3$ & $32^3$ & $64^3$ \\
+    \midrule
+    Voxel faces & 56.71 & 65.54 & $+$56.64 & $+$65.54 & 57.45 & 64.81 & 55.30 & 65.65 \\
+    MC (binary) & 10.38 & 14.49 & $+$9.56 & $+$14.49 & 10.51 & 14.31 & 8.91 & 13.99 \\
+    MC (greyscale) & 4.78 & 3.52 & $-$1.25 & $+$2.41 & 4.10 & 3.38 & 5.27 & 3.57 \\
+    MC (smoothed) & 13.78 & 3.04 & $-$13.78 & $-$3.04 & 9.93 & 2.29 & 14.02 & 4.37 \\
+    \midrule
+    MC + lookup & 2.97 & 0.79 & $-$1.45 & $-$0.46 & 1.87 & 0.43 & 3.22 & 1.09 \\
+    Random Forest & 0.72 & \textbf{0.18} & $-$0.18 & \textbf{$+$0.04} & \textbf{0.73} & 0.39 & \textbf{1.71} & \textbf{0.48} \\
+    PointNet & 1.98 & 1.04 & $+$0.33 & $+$0.34 & 1.54 & 0.95 & 3.00 & 1.32 \\
+    3D CNN & 0.68 & 0.26 & \textbf{$-$0.10} & $+$0.10 & 1.05 & 0.45 & 1.96 & 0.55 \\
+    CNN + features & \textbf{0.62} & 0.21 & $-$0.15 & $+$0.07 & 1.06 & \textbf{0.39} & 1.97 & 0.52 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
