@@ -1,0 +1,121 @@
+\subsection{Shape families}
+Every shape is defined in a body frame with maximum extent 1 by an implicit function that is negative
+inside. Five families are used for training and two are held out for testing only
+(Table~\ref{tab:families}). The random blobs are star-shaped with
+\begin{equation}
+  \log r(\mathbf u) = \sum_k a_k \cos\!\left(\omega_k\, \mathbf d_k\!\cdot\!\mathbf u + \phi_k\right),
+\end{equation}
+a sum of plane waves on the sphere with random unit directions $\mathbf d_k$ and phases $\phi_k$, which
+behaves like a Gaussian random field on the sphere. Smooth blobs use six low-frequency waves; rough
+blobs add ten high-frequency, low-amplitude waves. Superellipsoids
+$|x/a|^p+|y/b|^p+|z/c|^p=1$ are drawn either with $p<2$ (pointed tips) or $p>2$ (box-like, with rounded
+edges of high curvature), so they test both kinds of geometry the training families do not contain.
+
+\begin{table}[t]
+  \centering\small
+  \caption{Shape families. Parameters are drawn uniformly from the given ranges; all shapes are
+  normalised to maximum extent 1 before placement.}
+  \label{tab:families}
+  \begin{tabular}{llrl}
+    \toprule
+    Family & Role & Shapes & Parameters \\
+    \midrule
+    Sphere & train & 150 & radius 1 \\
+    Ellipsoid & train & 350 & $a=1$, $b,c\in[0.35,1]$ \\
+    Cylinder (capped) & train & 300 & radius $\in[0.3,0.85]$, half-height $\sqrt{1-\rho^2}$ \\
+    Torus & train & 300 & $r/R\in[0.2,0.6]$, $R+r=1$ \\
+    Smooth blob & train & 900 & 6 waves, $\omega\in[1,3]$, s.d.\ of $\log r\in[0.15,0.30]$ \\
+    \midrule
+    Superellipsoid & held out & 200 & $b,c\in[0.45,1]$; $p\in[1.5,1.8]$ (40\%) or $[3,6]$ (60\%) \\
+    Rough blob & held out & 200 & smooth blob $+$ 10 waves, $\omega\in[8,14]$, s.d.\ $\in[0.02,0.05]$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{CT-like voxelization}
+Each shape is scaled so that its maximum extent is a fraction $f\sim\mathcal U[0.35,1]$ of the half
+grid (minus a 2-voxel margin), rotated by a uniformly random rotation, and offset by a random
+sub-voxel shift. Object diameters range from 9.8 to 60 voxels. The volume is then formed by a
+simple CT forward model:
+\begin{enumerate}
+  \item \emph{Partial-volume occupancy.} Each voxel value is the fraction of the voxel inside the
+        shape, computed with $5\times5\times5$ supersampling in a band of $\pm4$ voxels around the
+        surface. The summed occupancy matches the true volume to within $10^{-4}$ for every family.
+  \item \emph{System blur.} A Gaussian point-spread function with $\sigma=0.6$ voxel.
+  \item \emph{Noise.} Additive Gaussian noise with $\sigma_n\in\{0, 0.05, 0.15\}$ relative to a unit
+        object/background contrast.
+\end{enumerate}
+Volumes are stored as 8-bit integers covering intensities $[-0.5,1.5]$ (step $0.0078$). Each shape is
+rendered at $N=32$ and $N=64$ with the same rotation and fill fraction, at all three noise levels, giving
+six volumes per shape and 14,400 volumes in total. Figure~\ref{fig:slices} shows an example.
+
+The data are split by shape instance (70/15/15 within each training family), so all six variants of a
+shape fall into the same split and no information leaks between training and test. This gives 1,400
+training, 299 validation and 301 test shapes from the training families, plus 200 superellipsoids and
+200 rough blobs that are used only for testing.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.8\linewidth]{example_slices.png}
+  \caption{Central slice through the same random blob at both resolutions and all three noise levels.}
+  \label{fig:slices}
+\end{figure}
+
+\subsection{Classical estimators}
+\begin{itemize}
+  \item \textbf{Voxel faces}: threshold at 0.5 and count exposed faces.
+  \item \textbf{MC (binary)}: marching cubes on the thresholded volume.
+  \item \textbf{MC (greyscale)}: marching cubes on the greyscale volume at iso-level 0.5.
+  \item \textbf{MC (smoothed)}: Gaussian smoothing with $\sigma_s=1$ voxel, then marching cubes at 0.5.
+\end{itemize}
+Figure~\ref{fig:meshes} contrasts the binary and greyscale meshes.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.95\linewidth]{example_meshes.png}
+  \caption{Reference surface of a rough blob and the marching-cubes meshes extracted from its clean
+  $32^3$ volume. The binary mesh shows the staircase pattern; the greyscale mesh is smooth but loses
+  the finest surface detail.}
+  \label{fig:meshes}
+\end{figure}
+
+\subsection{Calibrated baselines}
+\textbf{MC + lookup} multiplies the greyscale MC area by $e^{\bar y}$, where $\bar y$ is the median
+training target for the same resolution and noise level. It is given the true noise level, which makes
+it optimistic; any learned model has to beat it to show that it does more than memorise one correction
+per regime. \textbf{Random Forest} \citep{breiman2001} (400 trees, minimum leaf size 3, half of the
+features per split) predicts $y$ from ten hand-crafted descriptors: $\log(A_\text{MC}/N^2)$, the log
+ratios of the face, binary-MC and smoothed-MC areas to $A_\text{MC}$, a compactness term
+$\log(V^{2/3}/A_\text{MC})$ with $V$ the summed intensity, two principal-axis aspect ratios, the Euler
+number of the thresholded volume, a background noise estimate, and $N$.
+
+\subsection{Learned models}
+\paragraph{3D CNN.} Five convolutional blocks with 16, 32, 64, 128 and 256 channels. The first block has
+one $3^3$ convolution, the others two, each followed by batch normalisation and ReLU, and each block
+ends with $2\times$ max pooling. Global average and max pooling feed a head of 128 hidden units with
+dropout 0.2 and one output (3,593,297 parameters). The input intensity is rescaled to $[-1,1]$.
+
+\paragraph{PointNet.} 2,048 points are sampled uniformly by area on the greyscale marching-cubes mesh.
+Coordinates are centred on the grid centre and divided by a fixed constant (not per sample), so the
+point cloud keeps the voxel scale. A shared MLP of widths (64, 64, 64, 128, 1024), global max pooling and
+a head of 512 and 128 units with dropout 0.3 follow \citet{qi2017} (742,209 parameters). Instead of the
+T-Net alignment module we apply a uniformly random rotation to every training sample, which is exact
+because the target is rotation invariant.
+
+\paragraph{Hybrid CNN.} The 3D CNN with the ten standardised Random Forest descriptors concatenated to
+the pooled image features before the head (3,594,577 parameters). It tests whether learned image
+features add information beyond the hand-crafted ones.
+
+\paragraph{Training.} One model per resolution. Huber loss (threshold 1) on $y/0.05$, so that the loss is
+quadratic for errors below 5\%; AdamW with weight decay $10^{-4}$; one-cycle learning-rate schedule
+\citep{smith2019} with peak $10^{-3}$; batch size 32; up to 40 epochs (15 for the two CNN variants at
+$64^3$, which cost about eight times more per epoch); early stopping after 10 epochs without improvement
+of the validation error, keeping the best checkpoint. The CNNs are augmented with a random cube
+symmetry per batch. Training used PyTorch \citep{paszke2019} with the Metal (MPS) backend on an
+Apple-silicon laptop; one epoch of the $32^3$ CNN takes about 60 seconds.
+
+\subsection{Evaluation}
+For each estimate $\hat A$ we compute the relative error $e = \hat A/A_\text{true}-1$ and report the mean
+absolute percentage error (MAPE), the bias (mean signed error), its standard deviation, the 95th
+percentile of $|e|$, and $R^2$ of $\hat A$ against $A_\text{true}$. All numbers are on held-out shapes:
+the test split of the training families and the two held-out families.

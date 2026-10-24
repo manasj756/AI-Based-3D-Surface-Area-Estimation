@@ -5,6 +5,7 @@ Train a CNN3D or PointNet surface-area corrector at one resolution.
   python src/train.py --model cnn --N 64
   python src/train.py --model pointnet --N 32
   python src/train.py --model pointnet --N 64
+  python src/train.py --model cnnfeat --N 32     # hybrid: volume + hand-crafted features
 
 Outputs
   weights/{model}_N{N}.pt               best weights (lowest validation MAPE)
@@ -26,6 +27,7 @@ import torch.nn as nn
 
 from data import (EVAL_SPLITS, load_array, load_labels, points_to_tensor, random_cube_symmetry,
                   random_rotations, target, volumes_to_tensor)
+from baselines import FEATURE_NAMES, features
 from models import CNN3D, PointNet, count_params
 
 Y_SCALE = 0.05      # targets are divided by this so the Huber threshold (1.0) is a 5% error
@@ -42,7 +44,7 @@ def pick_device(name: str):
 
 
 def make_batch(kind, arr, idx, N, device, gen, augment):
-    if kind == "cnn":
+    if kind in ("cnn", "cnnfeat"):
         x = volumes_to_tensor(arr[idx], device)
         return random_cube_symmetry(x, gen) if augment else x
     x = points_to_tensor(arr[idx], N, device)
@@ -51,13 +53,18 @@ def make_batch(kind, arr, idx, N, device, gen, augment):
     return x
 
 
+def run(model, xb, fb):
+    return model(xb) if fb is None else model(xb, fb)
+
+
 @torch.no_grad()
-def predict(model, kind, arr, N, device, bs=64):
+def predict(model, kind, arr, N, device, feats=None, bs=64):
     model.eval()
     out = []
     for i in range(0, len(arr), bs):
         idx = np.arange(i, min(i + bs, len(arr)))
-        out.append(model(make_batch(kind, arr, idx, N, device, None, False)).float().cpu().numpy())
+        fb = None if feats is None else feats[idx].to(device)
+        out.append(run(model, make_batch(kind, arr, idx, N, device, None, False), fb).float().cpu().numpy())
     return np.concatenate(out) * Y_SCALE
 
 
@@ -68,10 +75,12 @@ def mape(y_pred, df):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", choices=["cnn", "pointnet"], required=True)
+    ap.add_argument("--model", choices=["cnn", "pointnet", "cnnfeat"],
+                    help="cnnfeat = hybrid CNN that also receives the Random Forest's hand-crafted features", required=True)
     ap.add_argument("--N", type=int, choices=[32, 64], required=True)
     ap.add_argument("--root", default=".")
-    ap.add_argument("--epochs", type=int, default=40)
+    ap.add_argument("--epochs", type=int, default=None,
+                    help="default 40; 15 for the 64^3 CNN (about 8x the cost per epoch)")
     ap.add_argument("--bs", type=int, default=32)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--patience", type=int, default=10)
@@ -80,11 +89,13 @@ def main():
     ap.add_argument("--seed", type=int, default=51)
     args = ap.parse_args()
 
+    if args.epochs is None:
+        args.epochs = 15 if (args.model in ("cnn", "cnnfeat") and args.N == 64) else 40
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     device = pick_device(args.device)
     kind, N = args.model, args.N
-    akind = "vol" if kind == "cnn" else "pts"
+    akind = "pts" if kind == "pointnet" else "vol"
     os.makedirs(os.path.join(args.root, "weights"), exist_ok=True)
     os.makedirs(os.path.join(args.root, "results"), exist_ok=True)
     tag = f"{kind}_N{N}"
@@ -97,7 +108,20 @@ def main():
     df_va = load_labels(args.root, "val", N)
     x_va = load_array(args.root, akind, "val", N)
 
-    model = (CNN3D() if kind == "cnn" else PointNet()).to(device)
+    # hybrid model: standardised hand-crafted features (statistics from the training split)
+    featfn, f_tr, f_va = None, None, None
+    if kind == "cnnfeat":
+        raw = features(df_tr)
+        mu, sd = raw.mean(0), raw.std(0) + 1e-8
+        np.savez(os.path.join(args.root, "weights", f"{tag}_featstats.npz"), mu=mu, sd=sd)
+        featfn = lambda d: torch.from_numpy(((features(d) - mu) / sd).astype(np.float32))
+        f_tr, f_va = featfn(df_tr), featfn(df_va)
+
+    if kind == "pointnet":
+        model = PointNet()
+    else:
+        model = CNN3D(n_extra=len(FEATURE_NAMES) if kind == "cnnfeat" else 0)
+    model = model.to(device)
     print(f"{tag}: {count_params(model):,} params, device {device}, "
           f"{len(df_tr)} train / {len(df_va)} val samples", flush=True)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
@@ -120,13 +144,14 @@ def main():
                 continue
             xb = make_batch(kind, x_tr, idx, N, device, gen, True)
             yb = y_tr[idx].to(device)
-            loss = loss_fn(model(xb), yb)
+            fb = None if f_tr is None else f_tr[idx].to(device)
+            loss = loss_fn(run(model, xb, fb), yb)
             opt.zero_grad(set_to_none=True)
             loss.backward()
             opt.step()
             sched.step()
             tot, nb = tot + loss.item(), nb + 1
-        va = mape(predict(model, kind, x_va, N, device), df_va)
+        va = mape(predict(model, kind, x_va, N, device, f_va), df_va)
         hist.append({"epoch": ep + 1, "train_loss": tot / nb, "val_mape": va, "sec": time.time() - t0})
         flag = ""
         if va < best:
@@ -146,7 +171,7 @@ def main():
             x = load_array(args.root, akind, split, N, mmap=True)
         except FileNotFoundError:
             continue
-        y = predict(model, kind, x, N, device)
+        y = predict(model, kind, x, N, device, None if featfn is None else featfn(df))
         rows.append(pd.DataFrame({"split": split, "N": N, "index": df["index"], "shape_id": df.shape_id,
                                   "y_pred": y, "A_pred": df.A_mc_grey.values * np.exp(y)}))
         print(f"{split:11s} MAPE  MC-grey {mape(np.zeros(len(df)), df):.2f}%  ->  {tag} {mape(y, df):.2f}%")

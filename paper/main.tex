@@ -1,0 +1,59 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\graphicspath{{../figures/}}
+\newcommand{\pending}[1]{\textcolor{red}{[#1]}}
+
+\title{Learned bias correction for surface-area estimation\\ from CT-like voxel data}
+\author{Manas Jain\\[2pt]
+\small Department of Physics, Indian Institute of Technology Roorkee, India}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+\input{sections/intro}
+
+\section{Problem, objectives and motivation}\label{sec:problem}
+\input{sections/problem}
+
+\section{Theory}\label{sec:theory}
+\input{sections/theory}
+
+\section{Previous work}\label{sec:previous}
+\input{sections/previous}
+
+\section{Method}\label{sec:method}
+\input{sections/method}
+
+\section{Results}\label{sec:results}
+\input{sections/results}
+
+\section{Conclusion}\label{sec:conclusion}
+\input{sections/conclusion}
+
+\section{Limitations}\label{sec:limitations}
+\input{sections/limitations}
+
+\section*{Code and data availability}
+All code, trained weights and result tables are in the project repository. The dataset is fully
+determined by the generation script and its fixed seed (51) and can be regenerated with one command;
+the generated volumes are also shared alongside the code.
+
+\bibliographystyle{unsrtnat}
+\bibliography{refs}
+
+\end{document}

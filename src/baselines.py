@@ -25,11 +25,17 @@ from data import EVAL_SPLITS, load_labels, target
 
 def features(df: pd.DataFrame) -> np.ndarray:
     g = df.A_mc_grey.values
+
+    def lr(a):
+        # log-ratio to MC-grey; smoothing can erase very thin objects (area 0),
+        # so the ratio is floored at 1e-3 instead of giving log(0)
+        return np.log(np.maximum(a / g, 1e-3))
+
     return np.column_stack([
         np.log(g / df.N.values ** 2),
-        np.log(df.A_face.values / g),
-        np.log(df.A_mc_bin.values / g),
-        np.log(df.A_mc_smooth.values / g),
+        lr(df.A_face.values),
+        lr(df.A_mc_bin.values),
+        lr(df.A_mc_smooth.values),
         np.log(np.maximum(df.vol_occ.values, 1.0) ** (2 / 3) / g),   # compactness
         df.aspect1.values, df.aspect2.values,
         np.clip(df.euler.values, -50, 200),

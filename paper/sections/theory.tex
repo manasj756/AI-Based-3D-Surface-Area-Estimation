@@ -1,0 +1,116 @@
+\subsection{Voxel-face counting}
+Consider a planar piece of surface with unit normal $\mathbf n=(n_x,n_y,n_z)$. Its digital
+(staircase) version is made of voxel faces normal to the three axes, and the total area of the faces
+normal to axis $i$ equals the projection of the true area onto the plane perpendicular to that axis.
+The face-count area per unit true area is therefore
+\begin{equation}
+  r(\mathbf n) = |n_x| + |n_y| + |n_z|, \qquad 1 \le r \le \sqrt3 .
+\end{equation}
+It equals 1 only for axis-aligned surfaces (Fig.~\ref{fig:facetheory}). For normals distributed
+uniformly on the sphere each component is uniform on $[-1,1]$, so $\mathbb E|n_i| = 1/2$ and
+$\mathbb E\,r = 3/2$. The face count of a randomly oriented smooth object thus overestimates its area by
+50\%, and since $r$ does not depend on the voxel size, refining the grid does not help. On a clean sphere
+at $128^3$ we measure $+50.03\%$ (Table~\ref{tab:curvature}).
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.52\linewidth]{face_count_theory.png}
+  \caption{Face-count area per unit true area, $|n_x|+|n_y|+|n_z|$, for a plane whose normal makes the
+  given polar angle with the $z$ axis, at azimuth 0° and 45°. The isotropic average is $3/2$.}
+  \label{fig:facetheory}
+\end{figure}
+
+\subsection{Marching cubes on binary and greyscale volumes}
+Marching cubes \citep{lorensen1987} places triangle vertices on the edges of each $2\times2\times2$
+cell where the image crosses the iso-level. On a binary volume the crossing is always at the edge
+midpoint, so only a finite set of triangle orientations can occur, and the mesh approximates a plane
+of arbitrary orientation by a small-scale zig-zag whose excess area depends on the orientation but not
+on the voxel size. Local polyhedrization schemes of this kind are not multigrid convergent: their area
+error does not go to zero as the grid is refined \citep{kenmochi2000,svane2013}. On clean spheres we
+measure $+7.3\%$ at $16^3$, rising to $+8.8\%$ at $128^3$.
+
+On a greyscale volume the vertex position is linearly interpolated from the partial-volume
+intensities, which recovers sub-voxel position information. For a plane and a symmetric blur the
+$0.5$ iso-surface of the blurred image coincides with the true surface. For a curved surface it does
+not. If the effective blur is Gaussian with variance $\sigma_\text{eff}^2$, the level sets of the
+blurred indicator move towards the centre of curvature by
+\begin{equation}
+  \delta \approx \sigma_\text{eff}^2\,H, \qquad H = \tfrac12(\kappa_1+\kappa_2),
+  \label{eq:shift}
+\end{equation}
+which follows from the heat equation: at the $0.5$ level of a blurred step the second normal derivative
+vanishes, so the normal speed of the level set equals the sum of principal curvatures, applied over a
+diffusion time $\sigma_\text{eff}^2/2$. For a sphere of radius $R$ this gives a relative area error of
+$-2\delta/R = -2\sigma_\text{eff}^2/R^2$. In our forward model the voxel box ($\sigma^2 = 1/12$) and the
+Gaussian PSF ($\sigma = 0.6$) combine to $\sigma_\text{eff}^2 \approx 0.443$ voxel$^2$; adding a
+smoothing filter with $\sigma_s = 1$ raises it to $1.443$. Table~\ref{tab:curvature} compares this
+prediction with the measured errors on clean spheres. The agreement is close at low resolution, where
+the curvature term dominates; at $64^3$ the remaining discrepancy is of the same size as the
+interpolation error of marching cubes itself.
+
+\begin{table}[t]
+  \centering\small
+  \caption{Greyscale marching-cubes error on clean spheres: measured vs the curvature prediction
+  $-2\sigma_\text{eff}^2/R^2$ from Eq.~\eqref{eq:shift}. $R$ in voxels.}
+  \label{tab:curvature}
+  \begin{tabular}{rrrrrr}
+    \toprule
+    & & \multicolumn{2}{c}{MC on greyscale} & \multicolumn{2}{c}{MC after smoothing ($\sigma_s=1$)}\\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+    Grid & $R$ & predicted & measured & predicted & measured \\
+    \midrule
+    $16^3$ & 5.4  & $-3.04\%$ & $-3.65\%$ & $-9.90\%$ & $-10.99\%$ \\
+    $32^3$ & 12.6 & $-0.56\%$ & $-0.62\%$ & $-1.82\%$ & $-2.00\%$ \\
+    $64^3$ & 27.0 & $-0.12\%$ & $-0.05\%$ & $-0.40\%$ & $-0.43\%$ \\
+    $128^3$ & 55.8 & $-0.03\%$ & $+0.07\%$ & $-0.09\%$ & $-0.10\%$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Effect of noise}
+Additive noise with standard deviation $\sigma_n$ has two effects on marching cubes. First, it perturbs
+the iso-crossing positions near the surface. A randomly perturbed surface has more area than the
+smooth one, since the area element $\sqrt{1+|\nabla\eta|^2}\ge1$ for any height perturbation $\eta$,
+so this bias is always positive. Second, background voxels exceed the iso-level by chance with
+probability $p = Q(0.5/\sigma_n)$, where $Q$ is the Gaussian tail function, and object voxels fall below
+it with the same probability. Each such voxel becomes a tiny closed surface or cavity. For
+$\sigma_n = 0.15$, $p = Q(3.33) \approx 4.3\times10^{-4}$, which predicts about 112 spurious components on
+a $64^3$ grid and 14 on a $32^3$ grid. Each component adds one to the Euler characteristic of the
+thresholded volume, and the measured Euler numbers at this noise level are indeed around 100 to 125 at
+$64^3$. For $\sigma_n = 0.05$, $p = Q(10)$ is negligible and only the surface roughening remains.
+Gaussian smoothing removes most of this noise, but by Eq.~\eqref{eq:shift} it also shrinks curved surfaces,
+and it erases structures thinner than about $2\sigma_s$ entirely (we observe this for the thinnest tori
+on the $32^3$ grid, where the smoothed volume never reaches the iso-level).
+
+The upshot is that greyscale marching cubes has a negative, curvature-driven bias that grows at low
+resolution, plus a positive, noise-driven bias that grows with $\sigma_n$ and with the number of
+voxels. The two can partly cancel, which is why a single correction factor cannot fix both.
+
+\subsection{Reference surface area}
+Spheres, cylinders and tori have closed-form areas. For an ellipsoid with semi-axes $a\ge b\ge c$,
+\begin{equation}
+  A = 2\pi c^2 + \frac{2\pi ab}{\sin\varphi}\left[E(\varphi,m)\sin^2\varphi + F(\varphi,m)\cos^2\varphi\right],
+  \quad \cos\varphi = \frac ca,\quad m = \frac{a^2(b^2-c^2)}{b^2(a^2-c^2)},
+\end{equation}
+with $F$ and $E$ the incomplete elliptic integrals of the first and second kind. The remaining
+families (random blobs and superellipsoids) are star-shaped, i.e.\ their surface is
+$\{r(\mathbf u)\,\mathbf u : |\mathbf u|=1\}$ for a radial function $r$. We triangulate them by mapping
+the vertices of a subdivided icosahedron to radius $r(\mathbf u)$. For a smooth surface the area of such
+an inscribed mesh converges as $A_\ell = A + c\,h_\ell^2 + o(h_\ell^2)$ in the edge length $h_\ell$, and
+each subdivision halves $h_\ell$, so Richardson extrapolation of two levels,
+\begin{equation}
+  A_\text{ref} = \tfrac13\left(4A_{\ell+1} - A_\ell\right),
+\end{equation}
+cancels the leading error term. We use levels 6 and 7 (81,920 and 327,680 triangles) and keep
+$|A_\text{ref}-A_7|$ as an error estimate for each shape.
+
+\subsection{Learning target}
+All models predict
+\begin{equation}
+  y = \log\frac{A_\text{true}}{A_\text{MC}},
+\end{equation}
+where $A_\text{MC}$ is the greyscale marching-cubes area, and the final estimate is
+$\hat A = A_\text{MC}\,e^{\hat y}$. The target is dimensionless, so it does not depend on the size of the
+object, and it is invariant to rotations and translations of the object. This lets the training data
+be augmented exactly with the 48 symmetries of the cube (axis permutations and reflections), which
+permute voxels without interpolation and leave the true area unchanged.

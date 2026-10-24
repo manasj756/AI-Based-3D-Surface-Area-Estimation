@@ -66,7 +66,7 @@ def plot(df, root):
             mu, sd = g.mean() * 100, g.std() * 100
             ax.plot(mu.index, mu.values, "-o", color=COLOR[m], lw=2, ms=4, label=LABEL[m])
             ax.fill_between(mu.index, mu - sd, mu + sd, color=COLOR[m], alpha=0.12, lw=0)
-        for k, m in enumerate(("cnn", "pointnet")):
+        for k, m in enumerate(("cnn", "pointnet", "cnnfeat")):
             g = d[d.method == m].groupby("N").err
             if len(g):
                 mu, sd = g.mean() * 100, g.std() * 100
@@ -76,9 +76,11 @@ def plot(df, root):
         ax.set_xscale("log", base=2)
         ax.set_xticks(SWEEP_N, [str(n) for n in SWEEP_N])
         ax.set_title(f"noise σ = {sn:g}", fontsize=10)
-        ax.set_xlabel("grid size N (object fills 35-100% of the grid)")
     axes[0].set_ylabel("mean signed error (%)  ± 1 SD")
-    axes[2].legend(fontsize=8, loc="upper right")
+    for ax in axes:
+        ax.set_xlabel("grid size N")
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="upper center", bbox_to_anchor=(0.5, -0.02), ncol=6, fontsize=8)
     fig.suptitle("Bias vs resolution (voxel-face counting stays at about +50% at every N, not shown)", fontsize=10)
     fig.savefig(os.path.join(root, "figures", "bias_vs_resolution.png"))
     plt.close(fig)

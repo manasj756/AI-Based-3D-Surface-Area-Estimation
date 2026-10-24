@@ -1,0 +1,26 @@
+\paragraph{Problem.} Given a CT-like greyscale volume of a single object on an $N^3$ grid, estimate the
+area of the object's true, continuous surface. The volume is degraded by the finite voxel size
+(partial-volume averaging), by the system point-spread function and by noise.
+
+\paragraph{Objectives.}
+\begin{enumerate}
+  \item Build a library of 3D shapes with reference surface areas accurate enough (relative error
+        below $10^{-4}$) that the errors of all estimators can be measured without contamination
+        from the reference itself.
+  \item Quantify the bias and spread of the classical estimators (voxel-face counting and three
+        marching-cubes variants) as a function of resolution and noise.
+  \item Train a 3D CNN and a PointNet to correct the greyscale marching-cubes area, and compare them,
+        at matched resolution and noise, with the classical estimators and with two calibrated
+        baselines: a per-regime lookup table and a Random Forest on hand-crafted descriptors.
+  \item Test whether the learned corrections transfer to shape families never seen in training
+        (superellipsoids with sharp edges or tips, and blobs with fine surface roughness).
+  \item State when a learned correction is worth using and when a classical estimator is enough.
+\end{enumerate}
+
+\paragraph{Why this matters.} A 5\% error in surface area is large compared with the effects that
+surface-area measurements are often used to detect, for example differences between catalyst batches,
+changes in pore structure, or the deviation of a printed lattice from its design. Errors of this size
+are typical for marching cubes on binary data and for greyscale marching cubes on small or noisy
+objects (Section~\ref{sec:results}). A correction that is learned once on synthetic data and then
+applied per object is cheap at inference time and can be reused for any scanner whose resolution and
+noise level fall inside the training range.

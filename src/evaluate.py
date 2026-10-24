@@ -19,18 +19,21 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.ticker
 import numpy as np
 import pandas as pd
 
 from data import EVAL_SPLITS, load_labels
 
 # Fixed method order = fixed colour slot (reference categorical palette, light mode).
-METHODS = ["mc_grey", "cnn", "pointnet", "rf", "mc_smooth", "mc_bin", "lookup", "face"]
+METHODS = ["mc_grey", "cnn", "pointnet", "rf", "mc_smooth", "mc_bin", "lookup", "cnnfeat", "face"]
 LABEL = {"mc_grey": "MC (greyscale)", "cnn": "3D CNN", "pointnet": "PointNet",
          "rf": "Random Forest", "mc_smooth": "MC (smoothed)", "mc_bin": "MC (binary)",
-         "lookup": "MC + lookup", "face": "Voxel faces"}
+         "lookup": "MC + lookup", "cnnfeat": "CNN + features", "face": "Voxel faces"}
 COLOR = dict(zip(METHODS, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100",
-                           "#e87ba4", "#008300", "#6250d6", "#e34948"]))
+                           "#e87ba4", "#008300", "#6250d6", "#e34948", "#8a8986"]))
+# voxel-face counting (~+50%) is reported in tables only, never plotted, so the
+# eight plotted methods use the eight validated categorical slots.
 CLASSICAL_COL = {"face": "A_face", "mc_bin": "A_mc_bin", "mc_grey": "A_mc_grey", "mc_smooth": "A_mc_smooth"}
 SPLIT_LABEL = {"val": "Validation", "test": "Test (seen families)",
                "held_super": "Held-out: superellipsoids", "held_rough": "Held-out: rough blobs"}
@@ -51,7 +54,7 @@ def long_table(root: str) -> pd.DataFrame:
         d = labs.copy()
         d["method"], d["A_est"] = m, d[col]
         out.append(d)
-    for m in ("lookup", "rf", "cnn", "pointnet"):
+    for m in ("lookup", "rf", "cnn", "pointnet", "cnnfeat"):
         files = [f for f in os.listdir(os.path.join(root, "results"))
                  if f == f"preds_{m}.csv" or f.startswith(f"preds_{m}_N")]
         if not files:
@@ -104,7 +107,8 @@ def fig_noise(df, root):
         ax.set_title(f"{N}³ grid", fontsize=10)
         ax.set_xlabel("noise level")
     axes[0].set_ylabel("mean absolute error (%)")
-    axes[1].legend(loc="upper left", fontsize=8, ncol=2)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="upper center", bbox_to_anchor=(0.5, 0.0), ncol=4, fontsize=8)
     fig.suptitle("Test split: surface-area error vs noise (voxel-face counting, ~50%, omitted)", fontsize=10)
     fig.savefig(os.path.join(root, "figures", "error_vs_noise.png"))
     plt.close(fig)
@@ -145,7 +149,8 @@ def fig_splits(df, root):
         ax.set_xticks(range(3), ["test\n(seen families)", "superellipsoid\n(held out)", "rough blob\n(held out)"], fontsize=8)
         ax.set_title(f"{N}³ grid", fontsize=10)
     axes[0].set_ylabel("mean absolute error (%)")
-    axes[1].legend(loc="upper left", fontsize=8, ncol=2)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="upper center", bbox_to_anchor=(0.5, 0.0), ncol=4, fontsize=8)
     fig.suptitle("Generalisation to unseen shape families (all noise levels pooled)", fontsize=10)
     fig.savefig(os.path.join(root, "figures", "heldout_families.png"))
     plt.close(fig)
@@ -161,9 +166,12 @@ def fig_history(root):
         tag = f[len("history_"):-4]
         m = tag.split("_")[0]
         ls = "-" if tag.endswith("64") else "--"
-        ax.plot(h.epoch, h.val_mape, ls, color=COLOR[m], lw=2, label=f"{LABEL[m]} {tag[-3:]}³")
+        ax.plot(h.epoch, h.val_mape, ls, color=COLOR[m], lw=2, label=f"{LABEL[m]}, {tag[-2:]}³")
     ax.set_xlabel("epoch"); ax.set_ylabel("validation MAPE (%)")
-    ax.legend(fontsize=8)
+    ax.set_yscale("log")
+    ax.set_yticks([0.2, 0.3, 0.5, 1, 2, 3], ["0.2", "0.3", "0.5", "1", "2", "3"])
+    ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax.legend(fontsize=8, ncol=2, loc="upper center", bbox_to_anchor=(0.5, -0.2))
     fig.savefig(os.path.join(root, "figures", "training_curves.png"))
     plt.close(fig)
 
