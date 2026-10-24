@@ -1,0 +1,8 @@
+# generated data (shared separately on Drive)
+training_data/
+testing_data/
+*.npy
+logs/
+__pycache__/
+*.pyc
+.DS_Store
