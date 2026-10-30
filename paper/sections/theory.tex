@@ -1,3 +1,10 @@
+This section explains why each classical method gets the area wrong, and by how much. In short:
+counting voxel faces measures a staircase instead of the real surface, so it is always too high;
+marching cubes on a black-and-white volume can only build a few triangle directions, so it leaves a
+small zig-zag that never goes away; and marching cubes on the greyscale volume is very good on flat
+surfaces but slightly too small on curved ones (because the scan blurs the surface) and too large on
+noisy ones. Knowing where each error comes from tells us what a correction model has to learn.
+
 \subsection{Voxel-face counting}
 Consider a planar piece of surface with unit normal $\mathbf n=(n_x,n_y,n_z)$. Its digital
 (staircase) version is made of voxel faces normal to the three axes, and the total area of the faces
@@ -25,8 +32,8 @@ Marching cubes \citep{lorensen1987} places triangle vertices on the edges of eac
 cell where the image crosses the iso-level. On a binary volume the crossing is always at the edge
 midpoint, so only a finite set of triangle orientations can occur, and the mesh approximates a plane
 of arbitrary orientation by a small-scale zig-zag whose excess area depends on the orientation but not
-on the voxel size. Local polyhedrization schemes of this kind are not multigrid convergent: their area
-error does not go to zero as the grid is refined \citep{kenmochi2000,svane2013}. On clean spheres we
+on the voxel size. Using smaller voxels makes the zig-zag finer but not flatter, so the area error does
+not go to zero as the grid is refined \citep{kenmochi2000,svane2013}. On clean spheres we
 measure $+7.3\%$ at $16^3$, rising to $+8.8\%$ at $128^3$.
 
 On a greyscale volume the vertex position is linearly interpolated from the partial-volume
@@ -38,9 +45,10 @@ blurred indicator move towards the centre of curvature by
   \delta \approx \sigma_\text{eff}^2\,H, \qquad H = \tfrac12(\kappa_1+\kappa_2),
   \label{eq:shift}
 \end{equation}
-which follows from the heat equation: at the $0.5$ level of a blurred step the second normal derivative
-vanishes, so the normal speed of the level set equals the sum of principal curvatures, applied over a
-diffusion time $\sigma_\text{eff}^2/2$. For a sphere of radius $R$ this gives a relative area error of
+where $H$ is the mean curvature. The intuition is that blurring a curved object spreads its intensity
+outwards over a larger volume, so the half-intensity surface ends up slightly inside the true one, and
+more so where the surface bends sharply. (Formally this follows from the heat equation, since Gaussian
+blurring is diffusion for a time $\sigma_\text{eff}^2/2$.) For a sphere of radius $R$ this gives a relative area error of
 $-2\delta/R = -2\sigma_\text{eff}^2/R^2$. In our forward model the voxel box ($\sigma^2 = 1/12$) and the
 Gaussian PSF ($\sigma = 0.6$) combine to $\sigma_\text{eff}^2 \approx 0.443$ voxel$^2$; adding a
 smoothing filter with $\sigma_s = 1$ raises it to $1.443$. Table~\ref{tab:curvature} compares this
@@ -75,9 +83,10 @@ so this bias is always positive. Second, background voxels exceed the iso-level 
 probability $p = Q(0.5/\sigma_n)$, where $Q$ is the Gaussian tail function, and object voxels fall below
 it with the same probability. Each such voxel becomes a tiny closed surface or cavity. For
 $\sigma_n = 0.15$, $p = Q(3.33) \approx 4.3\times10^{-4}$, which predicts about 112 spurious components on
-a $64^3$ grid and 14 on a $32^3$ grid. Each component adds one to the Euler characteristic of the
-thresholded volume, and the measured Euler numbers at this noise level are indeed around 100 to 125 at
-$64^3$. For $\sigma_n = 0.05$, $p = Q(10)$ is negligible and only the surface roughening remains.
+a $64^3$ grid and 14 on a $32^3$ grid. These specks can be counted with the Euler number of the
+thresholded volume (roughly, the number of separate pieces and cavities minus the number of tunnels),
+since each speck adds one to it. The measured Euler numbers at this noise level are indeed about 100 to
+125 at $64^3$. For $\sigma_n = 0.05$, $p = Q(10)$ is negligible and only the surface roughening remains.
 Gaussian smoothing removes most of this noise, but by Eq.~\eqref{eq:shift} it also shrinks curved surfaces,
 and it erases structures thinner than about $2\sigma_s$ entirely (we observe this for the thinnest tori
 on the $32^3$ grid, where the smoothed volume never reaches the iso-level).

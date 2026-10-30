@@ -1,15 +1,17 @@
-Surface area measured from voxelized CT data is biased: voxel-face counting overestimates it by about
-50\% at every resolution, marching cubes on binary data does not converge as the grid is refined, and
-marching cubes on greyscale data is pulled down by curvature and pushed up by noise. We build a
-synthetic CT-like benchmark of 2,400 shapes from seven families, with reference surface areas that are
-exact or converged to better than $10^{-4}$, rendered as 14,400 volumes at $32^3$ and $64^3$ with three
-noise levels. On this benchmark we compare four classical estimators, a per-regime lookup correction,
-a Random Forest on hand-crafted descriptors, a 3D CNN, a PointNet and a hybrid CNN that also receives the
-descriptors. All learned models predict a multiplicative correction to the greyscale marching-cubes area.
-A simple heat-equation argument predicts the curvature bias of greyscale marching cubes on spheres
-closely ($-0.56\%$ predicted against $-0.62\%$ measured at $32^3$). On held-out test shapes, greyscale marching cubes has a
-mean absolute error of 4.78\% ($32^3$) and 3.52\% ($64^3$); the best corrections reach 0.62\% (hybrid,
-$32^3$) and 0.18\% (Random Forest, $64^3$), and stay below 2\% on two shape families never seen in
-training. The Random Forest matches the deep models overall, the image-based models are best on objects
-smaller than 16 voxels, and PointNet is clearly weaker. No method recovers structures thinner than about
-two voxels.
+Measuring the surface area of an object from a CT scan is harder than it looks, because the scan is a
+grid of small cubes (voxels) and the true surface passes between them. The two common methods are
+wrong in predictable ways. Counting the exposed faces of the voxels gives an area about 50\% too large
+at every resolution. Marching cubes, which fits a triangle mesh to the data, is closer, but its error
+depends on how curved the object is and how noisy the scan is. We built 2,400 synthetic shapes from
+seven families whose true surface area is known to better than 0.01\%, and turned them into 14,400
+CT-like volumes at $32^3$ and $64^3$ voxels with three noise levels. We then trained several models to
+predict, for each object, how much the marching-cubes area should be corrected: a Random Forest on ten
+simple shape measurements, a 3D convolutional neural network (CNN) that looks at the whole volume, a
+PointNet that looks at points on the surface, and a hybrid that gives the CNN the ten measurements as
+well. A short calculation based on blurring also predicts how much marching cubes underestimates the
+area of a sphere ($-0.56\%$ predicted against $-0.62\%$ measured at $32^3$). On test shapes that none of
+the models had seen, marching cubes has an average error of 4.78\% ($32^3$) and 3.52\% ($64^3$). The
+best corrections bring this down to 0.62\% (hybrid, $32^3$) and 0.18\% (Random Forest, $64^3$), and
+stay below 2\% on two shape families left out of training altogether. The simple Random Forest does as
+well as the deep networks overall, the CNN is better only for objects smaller than 16 voxels, and
+PointNet is clearly weaker. No method can recover structures thinner than about two voxels.
