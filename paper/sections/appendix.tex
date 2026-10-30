@@ -1,0 +1,56 @@
+\section{Curvature bias of greyscale marching cubes}\label{app:curvature}
+For a plane and a symmetric blur the
+$0.5$ iso-surface of the blurred image coincides with the true surface. For a curved surface it does
+not. If the effective blur is Gaussian with variance $\sigma_\text{eff}^2$, the level sets of the
+blurred indicator move towards the centre of curvature by
+\begin{equation}
+  \delta \approx \sigma_\text{eff}^2\,H, \qquad H = \tfrac12(\kappa_1+\kappa_2),
+  \label{eq:shift}
+\end{equation}
+where $H$ is the mean curvature. The intuition is that blurring a curved object spreads its intensity
+outwards over a larger volume, so the half-intensity surface ends up slightly inside the true one, and
+more so where the surface bends sharply. (Formally this follows from the heat equation, since Gaussian
+blurring is diffusion for a time $\sigma_\text{eff}^2/2$.) For a sphere of radius $R$ this gives a relative area error of
+$-2\delta/R = -2\sigma_\text{eff}^2/R^2$. In our forward model the voxel box ($\sigma^2 = 1/12$) and the
+Gaussian PSF ($\sigma = 0.6$) combine to $\sigma_\text{eff}^2 \approx 0.443$ voxel$^2$; adding a
+smoothing filter with $\sigma_s = 1$ raises it to $1.443$. Table~\ref{tab:curvature} compares this
+prediction with the measured errors on clean spheres. The agreement is close at low resolution, where
+the curvature term dominates; at $64^3$ the remaining discrepancy is of the same size as the
+interpolation error of marching cubes itself.
+
+\begin{table}[h]
+  \centering\small
+  \caption{Greyscale marching-cubes error on clean spheres: measured vs the curvature prediction
+  $-2\sigma_\text{eff}^2/R^2$ from Eq.~\eqref{eq:shift}. $R$ in voxels.}
+  \label{tab:curvature}
+  \begin{tabular}{rrrrrr}
+    \toprule
+    & & \multicolumn{2}{c}{MC on greyscale} & \multicolumn{2}{c}{MC after smoothing ($\sigma_s=1$)}\\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+    Grid & $R$ & predicted & measured & predicted & measured \\
+    \midrule
+    $16^3$ & 5.4  & $-3.04\%$ & $-3.65\%$ & $-9.90\%$ & $-10.99\%$ \\
+    $32^3$ & 12.6 & $-0.56\%$ & $-0.62\%$ & $-1.82\%$ & $-2.00\%$ \\
+    $64^3$ & 27.0 & $-0.12\%$ & $-0.05\%$ & $-0.40\%$ & $-0.43\%$ \\
+    $128^3$ & 55.8 & $-0.03\%$ & $+0.07\%$ & $-0.09\%$ & $-0.10\%$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Reference surface areas}\label{app:reference}
+Spheres, cylinders and tori have closed-form areas. For an ellipsoid with semi-axes $a\ge b\ge c$,
+\begin{equation}
+  A = 2\pi c^2 + \frac{2\pi ab}{\sin\varphi}\left[E(\varphi,m)\sin^2\varphi + F(\varphi,m)\cos^2\varphi\right],
+  \quad \cos\varphi = \frac ca,\quad m = \frac{a^2(b^2-c^2)}{b^2(a^2-c^2)},
+\end{equation}
+with $F$ and $E$ the incomplete elliptic integrals of the first and second kind. The remaining
+families (random blobs and superellipsoids) are star-shaped, i.e.\ their surface is
+$\{r(\mathbf u)\,\mathbf u : |\mathbf u|=1\}$ for a radial function $r$. We triangulate them by mapping
+the vertices of a subdivided icosahedron to radius $r(\mathbf u)$. For a smooth surface the area of such
+an inscribed mesh converges as $A_\ell = A + c\,h_\ell^2 + o(h_\ell^2)$ in the edge length $h_\ell$, and
+each subdivision halves $h_\ell$, so Richardson extrapolation of two levels,
+\begin{equation}
+  A_\text{ref} = \tfrac13\left(4A_{\ell+1} - A_\ell\right),
+\end{equation}
+cancels the leading error term. We use levels 6 and 7 (81,920 and 327,680 triangles) and keep
+$|A_\text{ref}-A_7|$ as an error estimate for each shape.

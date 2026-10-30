@@ -84,7 +84,7 @@ Figure~\ref{fig:meshes} contrasts the binary and greyscale meshes.
 training target for the same resolution and noise level. It is given the true noise level, which makes
 it optimistic; any learned model has to beat it to show that it does more than memorise one correction
 per regime. \textbf{Random Forest} \citep{breiman2001} (400 trees, minimum leaf size 3, half of the
-features per split) predicts $y$ from ten hand-crafted descriptors: $\log(A_\text{MC}/N^2)$, the log
+features per split) predicts $y$ from ten simple measurements of the volume: $\log(A_\text{MC}/N^2)$, the log
 ratios of the face, binary-MC and smoothed-MC areas to $A_\text{MC}$, a compactness term
 $\log(V^{2/3}/A_\text{MC})$ with $V$ the summed intensity, two principal-axis aspect ratios, the Euler
 number of the thresholded volume, a background noise estimate, and $N$.
@@ -102,15 +102,11 @@ a head of 512 and 128 units with dropout 0.3 follow \citet{qi2017} (742,209 para
 T-Net alignment module we apply a uniformly random rotation to every training sample, which is exact
 because the target is rotation invariant.
 
-\paragraph{Hybrid CNN.} The 3D CNN with the ten standardised Random Forest descriptors concatenated to
-the pooled image features before the head (3,594,577 parameters). It tests whether learned image
-features add information beyond the hand-crafted ones.
-
 \paragraph{Training.} One model per resolution. Huber loss (threshold 1) on $y/0.05$, so that the loss is
 quadratic for errors below 5\%; AdamW with weight decay $10^{-4}$; one-cycle learning-rate schedule
-\citep{smith2019} with peak $10^{-3}$; batch size 32; up to 40 epochs (15 for the two CNN variants at
-$64^3$, which cost about eight times more per epoch); early stopping after 10 epochs without improvement
-of the validation error, keeping the best checkpoint. The CNNs are augmented with a random cube
+\citep{smith2019} with peak $10^{-3}$; batch size 32; up to 40 epochs (15 for the CNN at $64^3$, which
+costs about eight times more per epoch); early stopping after 10 epochs without improvement
+of the validation error, keeping the best checkpoint. The CNN is augmented with a random cube
 symmetry per batch. Training used PyTorch \citep{paszke2019} with the Metal (MPS) backend on an
 Apple-silicon laptop; one epoch of the $32^3$ CNN takes about 60 seconds.
 

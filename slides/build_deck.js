@@ -8,7 +8,6 @@ const applyTheme = process.env.PPTX_SKILL ? require(process.env.PPTX_SKILL + "/s
 
 const D = JSON.parse(fs.readFileSync(path.join("slides", "data.json"), "utf8"));
 const FIG = (f) => path.join("figures", f);
-const HAS_HYB = D.methods.includes("cnnfeat");
 const pct = (v) => (v === null || v === undefined ? "n/a" : v.toFixed(2) + "%");
 
 const THEME = {
@@ -24,9 +23,9 @@ const THEME = {
 const HEX = THEME.colors;
 // method colours, identical to the figures
 const MC = { mc_grey: "2A78D6", cnn: "EB6834", pointnet: "1BAF7A", rf: "EDA100", mc_smooth: "E87BA4",
-             mc_bin: "008300", lookup: "6250D6", cnnfeat: "E34948" };
+             mc_bin: "008300", lookup: "6250D6" };
 const NAME = { face: "Voxel faces", mc_bin: "MC binary", mc_grey: "MC greyscale", mc_smooth: "MC smoothed",
-               lookup: "MC + lookup", rf: "Random Forest", pointnet: "PointNet", cnn: "3D CNN", cnnfeat: "CNN + features" };
+               lookup: "MC + lookup", rf: "Random Forest", pointnet: "PointNet", cnn: "3D CNN" };
 
 const pres = new pptxgen();
 pres.layout = "LAYOUT_WIDE"; // 13.333 x 7.5
@@ -175,8 +174,8 @@ s.addNotes("Why does face counting fail? A flat patch with normal n becomes a st
 s = content("Theory", "Theory", "Greyscale marching cubes shrinks curved surfaces");
 rows(s, M, 1.85, 6.0, [
   { h: "Partial volume helps", t: "Interpolating the greyscale value puts vertices at sub-voxel positions. A flat surface is recovered exactly." },
-  { h: "Curvature does not", t: "Blur moves the 0.5 iso-surface towards the centre of curvature by δ ≈ σ²H (heat equation), with H the mean curvature." },
-  { h: "Prediction for a sphere", t: "Relative area error = -2σ²/R², with σ² = 0.443 voxel² (PSF + voxel box), or 1.443 after smoothing." },
+  { h: "Curvature does not", t: "Blurring spreads a curved object outwards, so the half-intensity surface sits slightly inside the true one. The area comes out a little too small." },
+  { h: "Prediction for a sphere", t: "Error ≈ -2σ²/R², with R the radius and σ² the total blur (0.44 voxel², or 1.44 after extra smoothing)." },
 ], { gap: 1.35 });
 const trow = (cells, hdr) => cells.map((c) => ({ text: String(c), options: { bold: !!hdr, color: hdr ? "FFFFFF" : "1B2333",
                                                   fill: { color: hdr ? HEX.dk2 : "FFFFFF" }, align: "center", fontSize: 14 } }));
@@ -187,7 +186,7 @@ s.addTable(tbl, { x: 6.85, y: 2.0, w: 5.9, colW: [0.8, 0.85, 1.05, 1.05, 1.1, 1.
                   rowH: 0.45, fontFace: "Calibri", objectName: "curvature table" });
 s.addText("Clean spheres, object filling 90% of the grid. The simple curvature formula predicts the measured error closely wherever curvature dominates.",
           { x: 6.85, y: 4.45, w: 5.9, h: 0.8, fontSize: 12, italic: true, color: "52514E", margin: 0, isTextBox: true, objectName: "table caption" });
-s.addNotes("Greyscale marching cubes uses the partial-volume information, so a flat surface comes out exactly right. But a curved surface shrinks. From the heat equation, the 0.5 iso-surface of a blurred object moves inward by sigma squared times the mean curvature. For a sphere that gives a relative error of minus 2 sigma squared over R squared. The table compares this prediction with what I measured. At 32 cubed: predicted minus 0.56%, measured minus 0.62%. After smoothing: predicted minus 1.82%, measured minus 2.00%. So the negative bias of marching cubes on small objects is not random: it is curvature.");
+s.addNotes("Greyscale marching cubes uses the partial-volume information, so a flat surface comes out exactly right. But a curved surface shrinks. Blurring spreads the object's intensity outwards, so the half-intensity surface ends up slightly inside the real one, and more so where the surface bends sharply. For a sphere this gives an error of about minus 2 sigma squared over R squared, where sigma squared is the total blur. The table compares this prediction with what I measured. At 32 cubed: predicted minus 0.56%, measured minus 0.62%. After smoothing: predicted minus 1.82%, measured minus 2.00%. So the negative bias of marching cubes on small objects is not random: it is curvature.");
 
 // ---------- 6. theory: noise and ground truth ----------
 s = content("Theory", "Theory", "Noise adds area; exact references make it measurable");
@@ -198,13 +197,13 @@ rows(s, M, 1.85, 6.0, [
 ], { gap: 1.35 });
 card(s, 6.85, 1.85, 5.9, 4.5, "ground truth card");
 s.addText([{ text: "Exact reference area", options: { bold: true, fontSize: 18, color: C.text2, breakLine: true } },
-           { text: "Closed form: sphere, cylinder, torus, ellipsoid (incomplete elliptic integrals).", options: { bullet: true, breakLine: true } },
-           { text: "Blobs and superellipsoids: icosphere mesh at levels 6 and 7, Richardson-extrapolated. Error below 0.01%.", options: { bullet: true, breakLine: true } },
+           { text: "Exact formulas: sphere, cylinder, torus, ellipsoid.", options: { bullet: true, breakLine: true } },
+           { text: "Blobs and superellipsoids: very fine triangle mesh at two levels of detail, combined to cancel the main error. Error below 0.01%.", options: { bullet: true, breakLine: true } },
            { text: "Not marching cubes at 512³ as the spec suggested: binary MC never converges, so it would bake its own bias into the ground truth.", options: { bullet: true, breakLine: true } },
-           { text: "14 of 14 pipeline checks pass (e.g. mesh vs elliptic integral agree to 2.5×10⁻⁸).", options: { bullet: true } }],
+           { text: "14 of 14 pipeline checks pass (e.g. the mesh method and the exact ellipsoid formula agree to 2.5×10⁻⁸).", options: { bullet: true } }],
           { x: 7.15, y: 2.05, w: 5.3, h: 4.1, fontSize: 14, color: C.text1, valign: "top", margin: 0, isTextBox: true,
             paraSpaceAfter: 6, objectName: "ground truth text" });
-s.addNotes("Noise does two things. Background voxels randomly cross the threshold; at noise 0.15 the chance is 4.3 times ten to the minus 4 per voxel, which predicts about 112 tiny specks on a 64 cubed grid, and I measure Euler numbers of about 110. Noise also roughens the surface, and a rough surface always has more area. So curvature pushes the area down and noise pushes it up. To measure all this, the reference area must be exact. I use closed forms where they exist, and a Richardson-extrapolated icosphere mesh for the blobs. I deliberately did not use marching cubes at 512 cubed as the reference, because binary marching cubes never converges, so it would put its own bias into the ground truth.");
+s.addNotes("Noise does two things. Background voxels randomly cross the threshold; at noise 0.15 the chance is 4.3 times ten to the minus 4 per voxel, which predicts about 112 tiny specks on a 64 cubed grid, and I measure Euler numbers of about 110. Noise also roughens the surface, and a rough surface always has more area. So curvature pushes the area down and noise pushes it up. To measure all this, the reference area must be exact. I use exact formulas where they exist, and for the blobs a very fine triangle mesh at two levels of detail, combined so that the main error cancels. I deliberately did not use marching cubes at 512 cubed as the reference, because binary marching cubes never converges, so it would put its own bias into the ground truth.");
 
 // ---------- 7. previous work ----------
 pres.addSection({ title: "Previous work" });
@@ -263,25 +262,24 @@ s.addText("Target y = log(A_true / A_MC): dimensionless, rotation invariant, so 
 const models = [
   { h: "3D CNN", t: "5 conv blocks (16 to 256 channels), global pooling. 3.59M parameters.", c: MC.cnn },
   { h: "PointNet", t: "2,048 points from the MC mesh, shared MLP to 1024, max-pool. 0.74M parameters.", c: MC.pointnet },
-  { h: "Random Forest", t: "10 hand-crafted descriptors: MC ratios, Euler number, noise estimate, shape.", c: MC.rf },
-  { h: "Hybrid", t: "The 3D CNN with the 10 descriptors added before its head.", c: MC.cnnfeat },
+  { h: "Random Forest", t: "10 simple measurements: MC area ratios, Euler number, noise estimate, shape.", c: MC.rf },
 ];
 models.forEach((m, i) => {
-  const x = M + i * 3.1;
-  card(s, x, 3.65, 2.85, 2.2, `model card ${i + 1}`);
+  const x = M + i * 4.13;
+  card(s, x, 3.65, 3.88, 2.2, `model card ${i + 1}`);
   s.addShape(pres.shapes.OVAL, { x: x + 0.25, y: 3.85, w: 0.32, h: 0.32, fill: { color: m.c }, line: { color: m.c }, objectName: `model dot ${i + 1}` });
-  s.addText(m.h, { x: x + 0.7, y: 3.82, w: 2.0, h: 0.4, fontSize: 16, bold: true, color: C.text2, margin: 0, isTextBox: true, objectName: `model head ${i + 1}` });
-  s.addText(m.t, { x: x + 0.25, y: 4.35, w: 2.4, h: 1.4, fontSize: 13, color: C.text1, valign: "top", margin: 0, isTextBox: true, objectName: `model text ${i + 1}` });
+  s.addText(m.h, { x: x + 0.7, y: 3.82, w: 3.0, h: 0.4, fontSize: 16, bold: true, color: C.text2, margin: 0, isTextBox: true, objectName: `model head ${i + 1}` });
+  s.addText(m.t, { x: x + 0.25, y: 4.35, w: 3.4, h: 1.4, fontSize: 13, color: C.text1, valign: "top", margin: 0, isTextBox: true, objectName: `model text ${i + 1}` });
 });
 s.addText("Baselines: voxel faces, MC on binary / greyscale / smoothed volumes, and MC + a lookup factor per resolution and noise level. Training: Huber loss, AdamW, one-cycle LR, up to 40 epochs, early stopping, Apple-silicon GPU (MPS).",
           { x: M, y: 6.05, w: W - 2 * M, h: 0.7, fontSize: 13, color: C.text1, margin: 0, isTextBox: true, objectName: "baseline note" });
-s.addNotes("All learned models predict the same thing: the log of the ratio between the true area and the greyscale marching-cubes area. The final estimate is the marching-cubes area times e to the prediction, so the model is a bias-correction layer on top of the classical method. Because this target does not change under rotation, I can augment exactly with the 48 symmetries of a cube. I compare four learned models: a 3D CNN on the volume, a PointNet on 2,048 points from the mesh, a Random Forest on ten hand-crafted descriptors, and a hybrid CNN that also gets those descriptors. The baselines include a simple lookup table with one factor per resolution and noise level.");
+s.addNotes("All learned models predict the same thing: the log of the ratio between the true area and the greyscale marching-cubes area. The final estimate is the marching-cubes area times e to the prediction, so the model is a bias-correction layer on top of the classical method. Because this target does not change under rotation, I can augment exactly with the 48 symmetries of a cube. I compare three learned models: a 3D CNN on the volume, a PointNet on 2,048 points from the mesh, and a Random Forest on ten simple measurements of the volume. The baselines include a simple lookup table with one factor per resolution and noise level.");
 
 // ---------- 10. results: main ----------
 pres.addSection({ title: "Results" });
 const red32 = Math.floor(D.test.mc_grey["32"] / D.test.cnn["32"]), red64 = Math.floor(D.test.mc_grey["64"] / D.test.cnn["64"]);
 s = content("Results", "Results", `Learned corrections cut the error ${red32} to ${red64} times`);
-const order = ["mc_grey", "mc_smooth", "lookup", "pointnet", "rf", "cnn"].concat(HAS_HYB ? ["cnnfeat"] : []);
+const order = ["mc_grey", "mc_smooth", "lookup", "pointnet", "rf", "cnn"];
 s.addChart(pres.charts.BAR, [
   { name: "32³", labels: order.map((m) => NAME[m]), values: order.map((m) => D.test[m]["32"]) },
   { name: "64³", labels: order.map((m) => NAME[m]), values: order.map((m) => D.test[m]["64"]) },
@@ -292,15 +290,12 @@ s.addChart(pres.charts.BAR, [
      objectName: "main results chart" });
 stat(s, 8.55, 1.85, 4.2, pct(D.test.cnn["32"]), `3D CNN at 32³ (MC greyscale: ${pct(D.test.mc_grey["32"])})`, MC.cnn, "stat cnn");
 stat(s, 8.55, 3.5, 4.2, pct(D.test.rf["64"]), `Random Forest at 64³ (MC greyscale: ${pct(D.test.mc_grey["64"])})`, "B07700", "stat rf");
-const hybLine = HAS_HYB ? `Hybrid CNN + features: ${pct(D.test.cnnfeat["32"])} at 32³, ${pct(D.test.cnnfeat["64"])} at 64³.`
-                        : "Hybrid CNN + features: results pending.";
 s.addText([{ text: "Not shown: voxel faces (" + D.test.face["32"].toFixed(0) + "-" + D.test.face["64"].toFixed(0) + "%) and binary MC (" +
                    D.test.mc_bin["32"].toFixed(0) + "-" + D.test.mc_bin["64"].toFixed(0) + "%).", options: { breakLine: true } },
-           { text: `PointNet is weaker (${pct(D.test.pointnet["32"])}, ${pct(D.test.pointnet["64"])}): the noisy mesh loses information the volume still has.`, options: { breakLine: true } },
-           { text: hybLine }],
+           { text: `PointNet is weaker (${pct(D.test.pointnet["32"])}, ${pct(D.test.pointnet["64"])}): the noisy mesh loses information the volume still has.` }],
           { x: 8.55, y: 5.15, w: 4.2, h: 1.6, fontSize: 13, color: C.text1, valign: "top", margin: 0, paraSpaceAfter: 6,
             isTextBox: true, objectName: "results notes" });
-s.addNotes(`Here are the main results on test shapes the models never saw. Greyscale marching cubes is off by ${pct(D.test.mc_grey["32"])} at 32 cubed and ${pct(D.test.mc_grey["64"])} at 64 cubed. Voxel faces and binary marching cubes are far worse and are left off the chart. A simple lookup table already halves the error. The 3D CNN brings it down to ${pct(D.test.cnn["32"])} and ${pct(D.test.cnn["64"])}. An honest finding: the Random Forest on ten hand-crafted features is just as good at 32 cubed and even better at 64 cubed, ${pct(D.test.rf["64"])}. PointNet is clearly weaker, because sampling points from an already noisy mesh throws information away. ${hybLine}`);
+s.addNotes(`Here are the main results on test shapes the models never saw. Greyscale marching cubes is off by ${pct(D.test.mc_grey["32"])} at 32 cubed and ${pct(D.test.mc_grey["64"])} at 64 cubed. Voxel faces and binary marching cubes are far worse and are left off the chart. A simple lookup table already halves the error. The 3D CNN brings it down to ${pct(D.test.cnn["32"])} and ${pct(D.test.cnn["64"])}. An honest finding: the Random Forest on ten hand-crafted features is just as good at 32 cubed and even better at 64 cubed, ${pct(D.test.rf["64"])}. PointNet is clearly weaker, because sampling points from an already noisy mesh throws information away.`);
 
 // ---------- 11. results: resolution ----------
 s = content("Results", "Results: resolution sweep", "Binary MC never converges; greyscale MC does, until noise");
@@ -312,8 +307,8 @@ s.addText([{ text: "Binary MC: bias grows with resolution, to +34% at 128³ unde
 s.addNotes("This sweep renders the same 48 shapes at grid sizes from 16 to 128. Binary marching cubes, in green, gets worse as resolution increases, up to plus 34% at 128 cubed with noise, exactly because more voxels means more noise specks. Greyscale marching cubes, in blue, is strongly negative at low resolution, which is the curvature effect, converges on clean data, but is pushed up to plus 10% by noise. Smoothing, in pink, kills the noise but makes small objects much too small. The learned models, the squares, sit close to zero everywhere they were trained.");
 
 // ---------- 12. results: noise and size ----------
-s = content("Results", "Results: noise and object size", "Robust to noise; image models are best on small objects");
-const nl = ["σ = 0", "σ = 0.05", "σ = 0.15"], nm = ["mc_grey", "pointnet", "rf", "cnn"].concat(HAS_HYB ? ["cnnfeat"] : []);
+s = content("Results", "Results: noise and object size", "Robust to noise; the CNN is best on small objects");
+const nl = ["σ = 0", "σ = 0.05", "σ = 0.15"], nm = ["mc_grey", "pointnet", "rf", "cnn"];
 [32, 64].forEach((N, i) => {
   s.addChart(pres.charts.LINE, nm.map((m) => ({ name: NAME[m], labels: nl, values: [0.0, 0.05, 0.15].map((v) => D.noise[m][`${N}_${v === 0 ? "0.0" : v}`]) })),
     { x: M + i * 4.2, y: 1.75, w: 4.0, h: 4.0, chartColors: nm.map((m) => MC[m]), lineSize: 2, lineDataSymbol: "circle", lineDataSymbolSize: 7,
@@ -321,13 +316,13 @@ const nl = ["σ = 0", "σ = 0.05", "σ = 0.15"], nm = ["mc_grey", "pointnet", "r
       catGridLine: { style: "none" }, valAxisMinVal: 0, valAxisMaxVal: 10, ...chartText, objectName: `noise chart ${N}` });
 });
 if (true) {
-  const smallBest = HAS_HYB ? "cnnfeat" : "cnn";
+  const smallBest = "cnn";
   stat(s, 9.2, 1.85, 3.55, pct(D.small[smallBest]), `${NAME[smallBest]} on objects under 16 voxels (MC greyscale ${pct(D.small.mc_grey)}, RF ${pct(D.small.rf)})`, MC[smallBest], "stat small");
   stat(s, 9.2, 3.55, 3.55, pct(D.noise.cnn["64_0.15"]), `3D CNN at 64³, σn = 0.15 (MC greyscale ${pct(D.noise.mc_grey["64_0.15"])})`, MC.cnn, "stat noise");
 }
 s.addText("Learned models barely notice noise. Object size matters more than grid size; smoothing is harmful for small objects.",
           { x: M, y: 6.0, w: 8.2, h: 0.7, fontSize: 14, color: C.text1, margin: 0, isTextBox: true, objectName: "noise note" });
-s.addNotes(`Splitting by noise: greyscale marching cubes jumps to ${pct(D.noise.mc_grey["64_0.15"])} at high noise on the 64 cubed grid, while the CNN only goes from ${pct(D.noise.cnn["64_0.0"])} to ${pct(D.noise.cnn["64_0.15"])}. So the learned models are almost insensitive to noise. Object size matters even more than grid size. For objects smaller than 16 voxels across, marching cubes is off by ${pct(D.small.mc_grey)}, and this is where the image-based models are clearly ahead: ${pct(D.small.cnnfeat)} for the hybrid and ${pct(D.small.cnn)} for the CNN, against ${pct(D.small.rf)} for the Random Forest.`);
+s.addNotes(`Splitting by noise: greyscale marching cubes jumps to ${pct(D.noise.mc_grey["64_0.15"])} at high noise on the 64 cubed grid, while the CNN only goes from ${pct(D.noise.cnn["64_0.0"])} to ${pct(D.noise.cnn["64_0.15"])}. So the learned models are almost insensitive to noise. Object size matters even more than grid size. For objects smaller than 16 voxels across, marching cubes is off by ${pct(D.small.mc_grey)}, and this is where the CNN is clearly ahead: ${pct(D.small.cnn)}, against ${pct(D.small.rf)} for the Random Forest.`);
 
 // ---------- 13. results: generalisation and failure ----------
 s = content("Results", "Results: unseen shapes", "Transfers to unseen shapes; fails below two voxels");
@@ -346,14 +341,14 @@ s.addText("CONCLUSION", { placeholder: "kicker" });
 s.addText("A learned correction removes most of the bias, and theory explains what remains", { placeholder: "title" });
 const concl = [
   `Classical estimators are biased in predictable ways: +50% (faces), non-convergent (binary MC), curvature and noise (greyscale MC).`,
-  `The best corrections reach ${pct(HAS_HYB ? D.test.cnnfeat["32"] : D.test.cnn["32"])} (32³) and ${pct(D.test.rf["64"])} (64³) on unseen test shapes, from ${pct(D.test.mc_grey["32"])} and ${pct(D.test.mc_grey["64"])}.`,
-  `A Random Forest on physics-motivated features matches the deep models; adding image features helps only slightly, mainly on small objects.`,
+  `The best corrections reach ${pct(D.test.cnn["32"])} (32³) and ${pct(D.test.rf["64"])} (64³) on unseen test shapes, from ${pct(D.test.mc_grey["32"])} and ${pct(D.test.mc_grey["64"])}.`,
+  `A Random Forest on ten simple measurements matches the 3D CNN; the CNN is worth it mainly for small objects.`,
   `Limits: structures thinner than about two voxels and sub-voxel roughness.`,
 ];
 s.addText(concl.map((t, i) => ({ text: t, options: { bullet: { type: "number" }, breakLine: i < concl.length - 1 } })),
           { x: M, y: 3.55, w: 12.1, h: 3.2, fontSize: 18, color: "E6ECF7", valign: "top", margin: 0, paraSpaceAfter: 10,
             isTextBox: true, objectName: "conclusion list" });
-s.addNotes("To conclude. The classical estimators are biased in ways we can predict from theory. A learned correction on top of marching cubes removes most of that bias, down to well under 1% on unseen test shapes, and it is robust to noise. A Random Forest on a few physics-motivated features does just as well as the deep models overall, which is an important honest result. Combining image features with those descriptors, the hybrid model, is best at 32 cubed but only by a small margin; the image-based models are the better choice for small objects and coarse grids. The remaining failures, structures thinner than about two voxels and sub-voxel roughness, are exactly where the information is no longer in the image.");
+s.addNotes("To conclude. The classical estimators are biased in ways we can predict from theory. A learned correction on top of marching cubes removes most of that bias, down to well under 1% on unseen test shapes, and it is robust to noise. A Random Forest on ten simple measurements does just as well as the 3D CNN overall, which is an important honest result. The CNN is the better choice for small objects and coarse grids. The remaining failures, structures thinner than about two voxels and sub-voxel roughness, are exactly where the information is no longer in the image.");
 
 // ---------- 15. limitations ----------
 s = content("Conclusion", "Limitations", "What this study does not show yet");

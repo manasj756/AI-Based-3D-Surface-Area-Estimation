@@ -17,7 +17,7 @@ It equals 1 only for axis-aligned surfaces (Fig.~\ref{fig:facetheory}). For norm
 uniformly on the sphere each component is uniform on $[-1,1]$, so $\mathbb E|n_i| = 1/2$ and
 $\mathbb E\,r = 3/2$. The face count of a randomly oriented smooth object thus overestimates its area by
 50\%, and since $r$ does not depend on the voxel size, refining the grid does not help. On a clean sphere
-at $128^3$ we measure $+50.03\%$ (Table~\ref{tab:curvature}).
+at $128^3$ we measure $+50.03\%$.
 
 \begin{figure}[t]
   \centering
@@ -36,44 +36,16 @@ on the voxel size. Using smaller voxels makes the zig-zag finer but not flatter,
 not go to zero as the grid is refined \citep{kenmochi2000,svane2013}. On clean spheres we
 measure $+7.3\%$ at $16^3$, rising to $+8.8\%$ at $128^3$.
 
-On a greyscale volume the vertex position is linearly interpolated from the partial-volume
-intensities, which recovers sub-voxel position information. For a plane and a symmetric blur the
-$0.5$ iso-surface of the blurred image coincides with the true surface. For a curved surface it does
-not. If the effective blur is Gaussian with variance $\sigma_\text{eff}^2$, the level sets of the
-blurred indicator move towards the centre of curvature by
-\begin{equation}
-  \delta \approx \sigma_\text{eff}^2\,H, \qquad H = \tfrac12(\kappa_1+\kappa_2),
-  \label{eq:shift}
-\end{equation}
-where $H$ is the mean curvature. The intuition is that blurring a curved object spreads its intensity
-outwards over a larger volume, so the half-intensity surface ends up slightly inside the true one, and
-more so where the surface bends sharply. (Formally this follows from the heat equation, since Gaussian
-blurring is diffusion for a time $\sigma_\text{eff}^2/2$.) For a sphere of radius $R$ this gives a relative area error of
-$-2\delta/R = -2\sigma_\text{eff}^2/R^2$. In our forward model the voxel box ($\sigma^2 = 1/12$) and the
-Gaussian PSF ($\sigma = 0.6$) combine to $\sigma_\text{eff}^2 \approx 0.443$ voxel$^2$; adding a
-smoothing filter with $\sigma_s = 1$ raises it to $1.443$. Table~\ref{tab:curvature} compares this
-prediction with the measured errors on clean spheres. The agreement is close at low resolution, where
-the curvature term dominates; at $64^3$ the remaining discrepancy is of the same size as the
-interpolation error of marching cubes itself.
-
-\begin{table}[t]
-  \centering\small
-  \caption{Greyscale marching-cubes error on clean spheres: measured vs the curvature prediction
-  $-2\sigma_\text{eff}^2/R^2$ from Eq.~\eqref{eq:shift}. $R$ in voxels.}
-  \label{tab:curvature}
-  \begin{tabular}{rrrrrr}
-    \toprule
-    & & \multicolumn{2}{c}{MC on greyscale} & \multicolumn{2}{c}{MC after smoothing ($\sigma_s=1$)}\\
-    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
-    Grid & $R$ & predicted & measured & predicted & measured \\
-    \midrule
-    $16^3$ & 5.4  & $-3.04\%$ & $-3.65\%$ & $-9.90\%$ & $-10.99\%$ \\
-    $32^3$ & 12.6 & $-0.56\%$ & $-0.62\%$ & $-1.82\%$ & $-2.00\%$ \\
-    $64^3$ & 27.0 & $-0.12\%$ & $-0.05\%$ & $-0.40\%$ & $-0.43\%$ \\
-    $128^3$ & 55.8 & $-0.03\%$ & $+0.07\%$ & $-0.09\%$ & $-0.10\%$ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+On a greyscale volume the vertex position is interpolated from the partial-volume intensities, so
+the mesh can follow the surface between voxel centres. For a flat surface the half-intensity level of
+the blurred image lies exactly on the true surface. For a curved surface it does not: blurring spreads
+the object's intensity outwards over a larger volume, so the half-intensity surface ends up slightly
+inside the true one, and more so where the surface bends sharply. The result is an area that is a
+little too small. For a sphere of radius $R$ voxels the expected error is about $-2\sigma^2/R^2$, where
+$\sigma^2$ measures the total blur ($\sigma^2 \approx 0.44$ voxel$^2$ in our data). This predicts
+$-0.56\%$ for a sphere on a $32^3$ grid, and we measure $-0.62\%$. The error shrinks quickly as objects
+get larger, but extra smoothing (often used to remove noise) makes it about three times bigger. The
+derivation and the full comparison are in Appendix~\ref{app:curvature}.
 
 \subsection{Effect of noise}
 Additive noise with standard deviation $\sigma_n$ has two effects on marching cubes. First, it perturbs
@@ -87,7 +59,7 @@ a $64^3$ grid and 14 on a $32^3$ grid. These specks can be counted with the Eule
 thresholded volume (roughly, the number of separate pieces and cavities minus the number of tunnels),
 since each speck adds one to it. The measured Euler numbers at this noise level are indeed about 100 to
 125 at $64^3$. For $\sigma_n = 0.05$, $p = Q(10)$ is negligible and only the surface roughening remains.
-Gaussian smoothing removes most of this noise, but by Eq.~\eqref{eq:shift} it also shrinks curved surfaces,
+Gaussian smoothing removes most of this noise, but as explained above it also shrinks curved surfaces,
 and it erases structures thinner than about $2\sigma_s$ entirely (we observe this for the thinnest tori
 on the $32^3$ grid, where the smoothed volume never reaches the iso-level).
 
@@ -96,22 +68,12 @@ resolution, plus a positive, noise-driven bias that grows with $\sigma_n$ and wi
 voxels. The two can partly cancel, which is why a single correction factor cannot fix both.
 
 \subsection{Reference surface area}
-Spheres, cylinders and tori have closed-form areas. For an ellipsoid with semi-axes $a\ge b\ge c$,
-\begin{equation}
-  A = 2\pi c^2 + \frac{2\pi ab}{\sin\varphi}\left[E(\varphi,m)\sin^2\varphi + F(\varphi,m)\cos^2\varphi\right],
-  \quad \cos\varphi = \frac ca,\quad m = \frac{a^2(b^2-c^2)}{b^2(a^2-c^2)},
-\end{equation}
-with $F$ and $E$ the incomplete elliptic integrals of the first and second kind. The remaining
-families (random blobs and superellipsoids) are star-shaped, i.e.\ their surface is
-$\{r(\mathbf u)\,\mathbf u : |\mathbf u|=1\}$ for a radial function $r$. We triangulate them by mapping
-the vertices of a subdivided icosahedron to radius $r(\mathbf u)$. For a smooth surface the area of such
-an inscribed mesh converges as $A_\ell = A + c\,h_\ell^2 + o(h_\ell^2)$ in the edge length $h_\ell$, and
-each subdivision halves $h_\ell$, so Richardson extrapolation of two levels,
-\begin{equation}
-  A_\text{ref} = \tfrac13\left(4A_{\ell+1} - A_\ell\right),
-\end{equation}
-cancels the leading error term. We use levels 6 and 7 (81,920 and 327,680 triangles) and keep
-$|A_\text{ref}-A_7|$ as an error estimate for each shape.
+Measuring the error of each method needs the true area of every shape. Spheres, cylinders, tori and
+ellipsoids have exact formulas. Random blobs and superellipsoids do not, so their area is computed
+numerically: the surface is covered with a very fine triangle mesh at two levels of detail (about
+82,000 and 328,000 triangles), and the two results are combined to cancel the leading error term. The
+remaining error is below 0.01\% for every shape, far smaller than the errors being measured. The
+formulas are given in Appendix~\ref{app:reference}.
 
 \subsection{Learning target}
 All models predict

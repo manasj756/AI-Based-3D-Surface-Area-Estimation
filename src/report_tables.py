@@ -11,10 +11,10 @@ import os
 import numpy as np
 import pandas as pd
 
-ORDER = ["face", "mc_bin", "mc_grey", "mc_smooth", "lookup", "rf", "pointnet", "cnn", "cnnfeat"]
+ORDER = ["face", "mc_bin", "mc_grey", "mc_smooth", "lookup", "rf", "pointnet", "cnn"]
 NAME = {"face": "Voxel faces", "mc_bin": "MC (binary)", "mc_grey": "MC (greyscale)",
         "mc_smooth": "MC (smoothed)", "lookup": "MC + lookup", "rf": "Random Forest",
-        "pointnet": "PointNet", "cnn": "3D CNN", "cnnfeat": "CNN + features"}
+        "pointnet": "PointNet", "cnn": "3D CNN"}
 GROUP_BREAK = {"lookup"}             # rule before the calibrated/learned block
 OUT = os.path.join("paper", "tables")
 
@@ -27,11 +27,11 @@ def fmt(v, best, signed=False, nd=2):
     return f"\\textbf{{{s}}}" if best else s
 
 
-def table(rows_by_method, cols, colfmt, header, caption, label, signed_cols=(), best_abs=True):
+def table(rows_by_method, cols, colfmt, header, caption, label, signed_cols=(), best_abs=True, place="t"):
     """rows_by_method: {method: [values per col]}"""
     methods = [m for m in ORDER if m in rows_by_method]
     vals = np.array([rows_by_method[m] for m in methods], dtype=float)
-    lines = ["\\begin{table}[t]", "  \\centering\\small", f"  \\caption{{{caption}}}", f"  \\label{{{label}}}",
+    lines = [f"\\begin{{table}}[{place}]", "  \\centering\\small", f"  \\caption{{{caption}}}", f"  \\label{{{label}}}",
              "  \\setlength{\\tabcolsep}{4pt}",
              f"  \\begin{{tabular}}{{{colfmt}}}", "    \\toprule", header, "    \\midrule"]
     for i, m in enumerate(methods):
@@ -100,7 +100,7 @@ def main():
 
     # Family table: methods as columns would be wide; families as rows, selected methods
     mf = pd.read_csv("results/metrics_family.csv")
-    sel = [m for m in ("mc_grey", "lookup", "rf", "pointnet", "cnn", "cnnfeat") if m in set(mf.method)]
+    sel = [m for m in ("mc_grey", "lookup", "rf", "pointnet", "cnn") if m in set(mf.method)]
     fam_order = ["sphere", "ellipsoid", "cylinder", "torus", "blob", "superellipsoid", "rough_blob"]
     fam_name = {"sphere": "Sphere", "ellipsoid": "Ellipsoid", "cylinder": "Cylinder", "torus": "Torus",
                 "blob": "Smooth blob", "superellipsoid": "Superellipsoid$^\\dagger$", "rough_blob": "Rough blob$^\\dagger$"}
@@ -112,7 +112,7 @@ def main():
              "    & " + " & ".join(f"\\multicolumn{{{len(sel)}}}{{c}}{{${N}^3$}}" for N in (32, 64)) + " \\\\",
              f"    \\cmidrule(lr){{2-{1 + len(sel)}}}\\cmidrule(lr){{{2 + len(sel)}-{1 + 2 * len(sel)}}}",
              "    Family & " + " & ".join([NAME[m].replace("MC (greyscale)", "MC grey")
-                                         .replace("Random Forest", "RF").replace("CNN + features", "Hybrid")
+                                         .replace("Random Forest", "RF")
                                          .replace("MC + lookup", "Lookup") for m in sel] * 2) + " \\\\",
              "    \\midrule"]
     for fam in fam_order:

@@ -44,18 +44,10 @@ systematic, regime-dependent bias, while at $32^3$ the error depends strongly on
 
 The 3D CNN reaches 0.68\% at $32^3$ and 0.26\% at $64^3$, a seven-fold and a thirteen-fold reduction
 relative to greyscale marching cubes, with a bias within $\pm0.1\%$ and $R^2$ of 0.99985 and 0.99997.
-The Random Forest on hand-crafted descriptors performs almost identically at $32^3$ (0.72\%) and is
+The Random Forest on ten simple measurements performs almost identically at $32^3$ (0.72\%) and is
 better at $64^3$ (0.18\%). PointNet is clearly weaker than both (1.98\% and 1.04\%): sampling 2,048 points
 from a mesh that already contains the noise artefacts throws away the intensity information that the
 volume-based models use.
-
-The hybrid network, which receives the ten Random Forest descriptors next to its image features, gives
-the lowest error at $32^3$ (0.62\%) and the second lowest at $64^3$ (0.21\%, against 0.18\% for the Random
-Forest). Its gain over the image-only CNN is small (0.06 and 0.05 percentage points), and it does not
-generalise better: on the held-out families it matches the CNN at $32^3$ (1.06\% and 1.97\%) and the
-Random Forest at $64^3$ (0.39\% and 0.52\%). Learned image features therefore add a little information
-beyond the physics-motivated descriptors on familiar shapes, but most of the correction is already
-captured by the descriptors themselves.
 
 \begin{figure}[t]
   \centering
@@ -66,7 +58,7 @@ captured by the descriptors themselves.
 \end{figure}
 
 The Random Forest's feature importances explain why a small model does so well. The most important
-descriptors (impurity-based importance in brackets) are \input{tables/rf_importance}The Euler number and
+measurements (impurity-based importance in brackets) are \input{tables/rf_importance}The Euler number and
 the noise estimate measure exactly the two noise effects of Section~\ref{sec:theory} (spurious components
 and surface roughening), and the ratio of smoothed to raw marching-cubes area measures how much of the
 surface responds to smoothing, which is a proxy for curvature and thin features.
@@ -96,8 +88,8 @@ nearly insensitive to noise: at $64^3$ the CNN's MAPE goes from 0.20\% (clean) t
 \end{figure}
 
 Object size matters more than grid size (Table~\ref{tab:diameter}). For objects less than 16 voxels
-across, greyscale marching cubes has a MAPE of 6.43\%, the Random Forest 1.41\%, the CNN 1.24\% and the
-hybrid 1.14\%; this is the size class in which the image-based models have the clearest advantage. For objects larger than 32 voxels the
+across, greyscale marching cubes has a MAPE of 6.43\%, the Random Forest 1.41\%, and the CNN 1.24\%;
+this is the size class in which the CNN has its clearest advantage. For objects larger than 32 voxels the
 Random Forest is best, reaching 0.08\% above 48 voxels, and even the lookup table stays below 0.7\%.
 
 \input{tables/diameter}
@@ -126,9 +118,9 @@ Table~\ref{tab:family} breaks the results down by family.
 
 \subsection{Training behaviour}
 Figure~\ref{fig:curves} shows the validation error during training. The $32^3$ CNN had nearly
-converged after 40 epochs. Both $64^3$ CNN variants, limited to 15 epochs by the compute budget, reached
-their best validation error in the last epoch, so their results are likely not the best these
-architectures can reach.
+converged after 40 epochs. The $64^3$ CNN, limited to 15 epochs by the compute budget, reached
+its best validation error in the last epoch, so its result is likely not the best this
+architecture can reach.
 PointNet's validation error flattens early at both resolutions.
 
 \begin{figure}[t]
@@ -153,7 +145,7 @@ PointNet's validation error flattens early at both resolutions.
       correction factor brings it below 1\%. \\
     Noisy data ($\sigma_n = 0.15$) & Raw marching cubes overestimates by up to 9--10\%. Smoothing helps only
       for large objects; a learned correction (CNN or Random Forest) gives 0.3--1.1\%. \\
-    Small objects ($<16$ voxels) & Use an image-based model (hybrid 1.14\%, CNN 1.24\%, against 6.43\% for
+    Small objects ($<16$ voxels) & Use the 3D CNN (1.24\%, against 6.43\% for
       marching cubes); smoothing is harmful. \\
     Structures thinner than $\sim$2 voxels & No method tested here is reliable. \\
     \bottomrule

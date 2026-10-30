@@ -18,7 +18,7 @@ def get(df, **kw):
     return round(float(q.MAPE.iloc[0]), 2) if len(q) else None
 
 
-methods = [m for m in ["face", "mc_bin", "mc_grey", "mc_smooth", "lookup", "rf", "pointnet", "cnn", "cnnfeat"]
+methods = [m for m in ["face", "mc_bin", "mc_grey", "mc_smooth", "lookup", "rf", "pointnet", "cnn"]
            if m in set(ms.method)]
 data = {
     "methods": methods,

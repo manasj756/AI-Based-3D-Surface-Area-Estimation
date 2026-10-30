@@ -26,9 +26,8 @@ class CNN3D(nn.Module):
     independent of the input size.
     """
 
-    def __init__(self, channels=(16, 32, 64, 128, 256), dropout: float = 0.2, n_extra: int = 0):
+    def __init__(self, channels=(16, 32, 64, 128, 256), dropout: float = 0.2):
         super().__init__()
-        self.n_extra = n_extra          # >0: hybrid model, hand-crafted features join the head
         layers, cin = [], 1
         for i, c in enumerate(channels):
             layers += conv_bn(cin, c)
@@ -37,14 +36,12 @@ class CNN3D(nn.Module):
             layers.append(nn.MaxPool3d(2))
             cin = c
         self.encoder = nn.Sequential(*layers)
-        self.head = nn.Sequential(nn.Linear(2 * cin + n_extra, 128), nn.ReLU(inplace=True),
+        self.head = nn.Sequential(nn.Linear(2 * cin, 128), nn.ReLU(inplace=True),
                                   nn.Dropout(dropout), nn.Linear(128, 1))
 
-    def forward(self, x, feats=None):
+    def forward(self, x):
         h = self.encoder(x)
         h = torch.cat([h.mean(dim=(2, 3, 4)), h.amax(dim=(2, 3, 4))], 1)
-        if self.n_extra:
-            h = torch.cat([h, feats], 1)
         return self.head(h).squeeze(1)
 
 

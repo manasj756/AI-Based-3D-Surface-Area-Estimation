@@ -66,7 +66,7 @@ def plot(df, root):
             mu, sd = g.mean() * 100, g.std() * 100
             ax.plot(mu.index, mu.values, "-o", color=COLOR[m], lw=2, ms=4, label=LABEL[m])
             ax.fill_between(mu.index, mu - sd, mu + sd, color=COLOR[m], alpha=0.12, lw=0)
-        for k, m in enumerate(("cnn", "pointnet", "cnnfeat")):
+        for k, m in enumerate(("cnn", "pointnet")):
             g = d[d.method == m].groupby("N").err
             if len(g):
                 mu, sd = g.mean() * 100, g.std() * 100
@@ -92,8 +92,12 @@ def main():
     ap.add_argument("--root", default=".")
     ap.add_argument("--per_family", type=int, default=8)
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--plot_only", action="store_true", help="redraw the figure from results/sweep.csv")
     args = ap.parse_args()
     ROOT = args.root
+    if args.plot_only:
+        plot(pd.read_csv(os.path.join(args.root, "results", "sweep.csv")), args.root)
+        return
     os.makedirs(os.path.join(args.root, "figures"), exist_ok=True)
     os.makedirs(os.path.join(args.root, "results"), exist_ok=True)
     jobs, count = [], {}

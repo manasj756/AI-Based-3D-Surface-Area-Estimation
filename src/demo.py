@@ -20,8 +20,7 @@ from voxelize import ct_image, decode, encode, occupancy
 
 NAMES = {"face": "Voxel-face counting", "mc_bin": "Marching cubes (binary)",
          "mc_grey": "Marching cubes (greyscale)", "mc_smooth": "Marching cubes (smoothed)",
-         "cnn": "3D CNN correction", "pointnet": "PointNet correction",
-         "cnnfeat": "CNN + features correction"}
+         "cnn": "3D CNN correction", "pointnet": "PointNet correction"}
 
 
 def main():

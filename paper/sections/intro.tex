@@ -15,14 +15,14 @@ shrinks curved surfaces and can erase thin features altogether.
 
 The size and sign of the error therefore depend on resolution, noise, curvature and topology at the
 same time, which makes a single fixed correction factor inadequate. This is a natural setting for a
-learned correction: a model that looks at the volume, or at descriptors computed from it, and predicts
+learned correction: a model that looks at the volume, or at simple measurements computed from it, and predicts
 how far the classical measurement is from the truth for that particular object. Training such a model
 needs ground truth, which is only available exactly for synthetic objects.
 
 This work builds a synthetic CT-like dataset of seven shape families with reference surface areas that
 are exact or converged to better than $10^{-4}$, renders them at two resolutions and three noise
-levels, and compares four classical estimators, two calibrated baselines and three learned models
-(a 3D convolutional network, a PointNet on marching-cubes surface points, and a hybrid network that
-combines the volume with hand-crafted descriptors). The models predict a multiplicative correction to
+levels, and compares four classical estimators, two simple calibrated corrections and two learned
+models (a 3D convolutional network that sees the whole volume, and a PointNet that sees points on the
+marching-cubes surface). The models predict a multiplicative correction to
 the greyscale marching-cubes area, so that learning acts as a bias-correction layer on top of the
 classical measurement rather than replacing it.

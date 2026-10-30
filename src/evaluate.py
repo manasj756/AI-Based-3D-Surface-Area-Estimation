@@ -26,14 +26,13 @@ import pandas as pd
 from data import EVAL_SPLITS, load_labels
 
 # Fixed method order = fixed colour slot (reference categorical palette, light mode).
-METHODS = ["mc_grey", "cnn", "pointnet", "rf", "mc_smooth", "mc_bin", "lookup", "cnnfeat", "face"]
+METHODS = ["mc_grey", "cnn", "pointnet", "rf", "mc_smooth", "mc_bin", "lookup", "face"]
 LABEL = {"mc_grey": "MC (greyscale)", "cnn": "3D CNN", "pointnet": "PointNet",
          "rf": "Random Forest", "mc_smooth": "MC (smoothed)", "mc_bin": "MC (binary)",
-         "lookup": "MC + lookup", "cnnfeat": "CNN + features", "face": "Voxel faces"}
+         "lookup": "MC + lookup", "face": "Voxel faces"}
 COLOR = dict(zip(METHODS, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100",
-                           "#e87ba4", "#008300", "#6250d6", "#e34948", "#8a8986"]))
-# voxel-face counting (~+50%) is reported in tables only, never plotted, so the
-# eight plotted methods use the eight validated categorical slots.
+                           "#e87ba4", "#008300", "#6250d6", "#8a8986"]))
+# voxel-face counting (~+50%) is reported in tables only, never plotted.
 CLASSICAL_COL = {"face": "A_face", "mc_bin": "A_mc_bin", "mc_grey": "A_mc_grey", "mc_smooth": "A_mc_smooth"}
 SPLIT_LABEL = {"val": "Validation", "test": "Test (seen families)",
                "held_super": "Held-out: superellipsoids", "held_rough": "Held-out: rough blobs"}
@@ -54,7 +53,7 @@ def long_table(root: str) -> pd.DataFrame:
         d = labs.copy()
         d["method"], d["A_est"] = m, d[col]
         out.append(d)
-    for m in ("lookup", "rf", "cnn", "pointnet", "cnnfeat"):
+    for m in ("lookup", "rf", "cnn", "pointnet"):
         files = [f for f in os.listdir(os.path.join(root, "results"))
                  if f == f"preds_{m}.csv" or f.startswith(f"preds_{m}_N")]
         if not files:
@@ -82,6 +81,9 @@ def grouped(df, by):
     return df.groupby(by).apply(metrics, include_groups=False).reset_index()
 
 
+FIG_EXCLUDE = {"face"}
+
+
 def methods_present(df):
     return [m for m in METHODS if m in set(df.method)]
 
@@ -93,7 +95,7 @@ def fmt_pivot(t: pd.DataFrame, index, value="MAPE", digits=2) -> str:
 
 
 def fig_noise(df, root):
-    ms = [m for m in methods_present(df) if m != "face"]
+    ms = [m for m in methods_present(df) if m not in FIG_EXCLUDE]
     t = grouped(df[df.split == "test"], ["N", "noise", "method"])
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.4), sharey=True)
     w = 0.8 / len(ms)
@@ -116,7 +118,7 @@ def fig_noise(df, root):
 
 def fig_signed(df, root):
     """Distribution of signed error per method, test split, both resolutions."""
-    ms = [m for m in methods_present(df) if m != "face"]
+    ms = [m for m in methods_present(df) if m not in FIG_EXCLUDE]
     d = df[df.split == "test"]
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.4), sharey=True)
     for ax, N in zip(axes, (32, 64)):
@@ -136,7 +138,7 @@ def fig_signed(df, root):
 
 
 def fig_splits(df, root):
-    ms = [m for m in methods_present(df) if m != "face"]
+    ms = [m for m in methods_present(df) if m not in FIG_EXCLUDE]
     t = grouped(df, ["split", "N", "method"])
     splits = ["test", "held_super", "held_rough"]
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.4), sharey=True)
@@ -165,6 +167,8 @@ def fig_history(root):
         h = pd.read_csv(os.path.join(root, "results", f))
         tag = f[len("history_"):-4]
         m = tag.split("_")[0]
+        if m in FIG_EXCLUDE:
+            continue
         ls = "-" if tag.endswith("64") else "--"
         ax.plot(h.epoch, h.val_mape, ls, color=COLOR[m], lw=2, label=f"{LABEL[m]}, {tag[-2:]}³")
     ax.set_xlabel("epoch"); ax.set_ylabel("validation MAPE (%)")
@@ -179,12 +183,16 @@ def fig_history(root):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=".")
+    ap.add_argument("--from_csv", action="store_true",
+                    help="rebuild tables and figures from results/long_errors.csv, without the dataset")
     args = ap.parse_args()
     for d in ("results", "figures"):
         os.makedirs(os.path.join(args.root, d), exist_ok=True)
-
-    df = long_table(args.root)
-    df.to_csv(os.path.join(args.root, "results", "long_errors.csv"), index=False)
+    if args.from_csv:
+        df = pd.read_csv(os.path.join(args.root, "results", "long_errors.csv"))
+    else:
+        df = long_table(args.root)
+        df.to_csv(os.path.join(args.root, "results", "long_errors.csv"), index=False)
 
     t_split = grouped(df, ["split", "N", "method"])
     t_noise = grouped(df[df.split == "test"], ["N", "noise", "method"])

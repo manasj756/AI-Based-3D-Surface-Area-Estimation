@@ -6,7 +6,7 @@ curved surfaces, by an amount that a simple blurring argument predicts well, and
 Since both effects depend on the object and on the scan, no single correction factor can remove them.
 
 A correction learned from synthetic shapes with known area removes most of the error. On test shapes it
-cuts the error of greyscale marching cubes from 4.78\% to 0.62\% at $32^3$ and from 3.52\% to 0.18\% at
+cuts the error of greyscale marching cubes from 4.78\% to 0.68\% at $32^3$ and from 3.52\% to 0.18\% at
 $64^3$. It barely changes with noise, and it still works, with errors below 2\%, on shapes with sharp
 edges or rough surfaces that were never in the training data.
 
@@ -14,7 +14,7 @@ The most useful practical result is the comparison between models. A Random Fore
 measurements of the volume does as well as a 3D CNN with 3.6 million parameters, and is the best model
 for large objects. Its two most useful measurements are the Euler number (roughly, the number of
 separate pieces and cavities minus the number of tunnels, which counts the noise specks) and an estimate of the noise
-level. Giving the CNN the same ten measurements helps only a little. The CNN is worth its extra cost
+level. The CNN is worth its extra cost
 mainly for small objects on coarse grids. PointNet, which only sees points on the noisy marching-cubes
 surface, is clearly worse than the models that see the whole volume.
 

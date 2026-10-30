@@ -4,8 +4,8 @@ Surface area measured from voxelized CT data is biased. Counting exposed voxel
 faces overestimates the area by about 50% at every resolution, and marching
 cubes is biased by thresholding, noise and the finite voxel size. This project
 builds synthetic CT-like volumes of shapes with exactly known surface area and
-trains a 3D CNN, a PointNet and a hybrid CNN (volume + hand-crafted descriptors)
-to predict a multiplicative correction to the greyscale marching-cubes area. They
+trains a 3D CNN and a PointNet to predict a multiplicative correction to the
+greyscale marching-cubes area. They
 are benchmarked against four classical estimators and two calibrated baselines
 (a per-regime lookup factor and a Random Forest).
 
@@ -19,8 +19,7 @@ are benchmarked against four classical estimators and two calibrated baselines
 | MC + lookup factor | 2.97% | 0.79% |
 | PointNet | 1.98% | 1.04% |
 | Random Forest | 0.72% | **0.18%** |
-| 3D CNN | 0.68% | 0.26% |
-| Hybrid CNN + features | **0.62%** | 0.21% |
+| 3D CNN | **0.68%** | 0.26% |
 
 Full tables: `results/tables.md`; article: `paper/main.pdf`.
 
@@ -68,8 +67,6 @@ python src/train.py --model cnn --N 32
 python src/train.py --model cnn --N 64
 python src/train.py --model pointnet --N 32
 python src/train.py --model pointnet --N 64
-python src/train.py --model cnnfeat --N 32                   # hybrid: volume + descriptors
-python src/train.py --model cnnfeat --N 64
 python src/evaluate.py                                       # tables and figures
 python src/sweep.py --per_family 8 --workers 6               # resolution sweep
 python src/curvature_check.py                                # sphere curvature table

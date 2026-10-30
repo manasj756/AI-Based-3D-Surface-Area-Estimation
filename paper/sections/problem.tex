@@ -11,7 +11,7 @@ area of the object's true, continuous surface. The volume is degraded by the fin
         marching-cubes variants) as a function of resolution and noise.
   \item Train a 3D CNN and a PointNet to correct the greyscale marching-cubes area, and compare them,
         at matched resolution and noise, with the classical estimators and with two calibrated
-        baselines: a per-regime lookup table and a Random Forest on hand-crafted descriptors.
+        baselines: a per-regime lookup table and a Random Forest on ten simple measurements of the volume.
   \item Test whether the learned corrections transfer to shape families never seen in training
         (superellipsoids with sharp edges or tips, and blobs with fine surface roughness).
   \item State when a learned correction is worth using and when a classical estimator is enough.
