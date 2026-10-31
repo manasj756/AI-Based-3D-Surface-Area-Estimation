@@ -27,12 +27,14 @@ def fmt(v, best, signed=False, nd=2):
     return f"\\textbf{{{s}}}" if best else s
 
 
-def table(rows_by_method, cols, colfmt, header, caption, label, signed_cols=(), best_abs=True, place="t"):
+def table(rows_by_method, cols, colfmt, header, caption, label, signed_cols=(), best_abs=True, place="t", wide=False):
+    """wide=True: spans both columns of the two-column article (table*)."""
+    env = "table*" if wide else "table"
     """rows_by_method: {method: [values per col]}"""
     methods = [m for m in ORDER if m in rows_by_method]
     vals = np.array([rows_by_method[m] for m in methods], dtype=float)
-    lines = [f"\\begin{{table}}[{place}]", "  \\centering\\small", f"  \\caption{{{caption}}}", f"  \\label{{{label}}}",
-             "  \\setlength{\\tabcolsep}{4pt}",
+    lines = [f"\\begin{{{env}}}[{place}]", "  \\centering\\footnotesize", f"  \\caption{{{caption}}}", f"  \\label{{{label}}}",
+             "  \\setlength{\\tabcolsep}{3.5pt}",
              f"  \\begin{{tabular}}{{{colfmt}}}", "    \\toprule", header, "    \\midrule"]
     for i, m in enumerate(methods):
         if m in GROUP_BREAK:
@@ -44,7 +46,7 @@ def table(rows_by_method, cols, colfmt, header, caption, label, signed_cols=(), 
             best = np.nanmin(key) == key[i]
             cells.append(fmt(vals[i, j], best, signed=j in signed_cols))
         lines.append(f"    {NAME[m]} & " + " & ".join(cells) + " \\\\")
-    lines += ["    \\bottomrule", "  \\end{tabular}", "\\end{table}"]
+    lines += ["    \\bottomrule", "  \\end{tabular}", f"\\end{{{env}}}"]
     return "\n".join(lines) + "\n"
 
 
@@ -70,7 +72,7 @@ def main():
                       "Surface-area error (\\%) on held-out shapes, all noise levels pooled. MAPE: mean absolute "
                       "error; bias: mean signed error. The two right-hand blocks are shape families never seen "
                       "in training (MAPE). Best value per column in bold.",
-                      "tab:main", signed_cols=(2, 3)))
+                      "tab:main", signed_cols=(2, 3), wide=True))
 
     # Noise table (test MAPE)
     mn = pd.read_csv("results/metrics_noise.csv")
@@ -104,7 +106,7 @@ def main():
     fam_order = ["sphere", "ellipsoid", "cylinder", "torus", "blob", "superellipsoid", "rough_blob"]
     fam_name = {"sphere": "Sphere", "ellipsoid": "Ellipsoid", "cylinder": "Cylinder", "torus": "Torus",
                 "blob": "Smooth blob", "superellipsoid": "Superellipsoid$^\\dagger$", "rough_blob": "Rough blob$^\\dagger$"}
-    lines = ["\\begin{table}[t]", "  \\centering\\small",
+    lines = ["\\begin{table*}[t]", "  \\centering\\small",
              "  \\caption{MAPE (\\%) by shape family (test split and held-out families, all noise levels). "
              "$^\\dagger$Held out from training. Best per row and resolution in bold.}",
              "  \\label{tab:family}", "  \\setlength{\\tabcolsep}{3.5pt}\\footnotesize",
@@ -124,7 +126,7 @@ def main():
             b = np.nanmin(v)
             cells += [fmt(x, x == b) for x in v]
         lines.append(f"    {fam_name[fam]} & " + " & ".join(cells) + " \\\\")
-    lines += ["    \\bottomrule", "  \\end{tabular}}", "\\end{table}"]
+    lines += ["    \\bottomrule", "  \\end{tabular}}", "\\end{table*}"]
     with open(os.path.join(OUT, "family.tex"), "w") as f:
         f.write("\n".join(lines) + "\n")
 

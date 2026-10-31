@@ -1,16 +1,23 @@
-\paragraph{Problem.} Given a CT-like greyscale volume of a single object on an $N^3$ grid, estimate the
-area of the object's true, continuous surface. The volume is degraded by the finite voxel size
-(partial-volume averaging), by the scanner blur and by noise.
+\subsection{Problem}
+Given a CT-like greyscale volume of a single object on an $N^3$ grid, estimate the area of the object's
+true, continuous surface. The volume is degraded by the finite voxel size (partial-volume averaging),
+by the scanner blur and by noise.
 
-\paragraph{Objectives.} (1) Build shapes with reference areas accurate to better than $10^{-4}$, so that
-the reference adds no error of its own. (2) Measure the error of voxel-face counting and three
-marching-cubes variants across resolution and noise. (3) Train a 3D CNN and a PointNet to correct the
-greyscale marching-cubes area, and compare them with a per-regime lookup table and a Random Forest.
-(4) Test the corrections on shape families never seen in training. (5) State when a learned correction
-is worth using.
+\subsection{Objectives}
+The objectives of this project are:
+\begin{enumerate}
+  \item Build shapes with reference areas accurate to better than $10^{-4}$, so that the reference adds
+        no error of its own.
+  \item Measure the error of voxel-face counting and three marching-cubes variants across resolution
+        and noise.
+  \item Train a 3D CNN and a PointNet to correct the greyscale marching-cubes area, and compare them
+        with a per-regime lookup table and a Random Forest.
+  \item Test the corrections on shape families never seen in training.
+  \item State when a learned correction is worth using.
+\end{enumerate}
 
-\paragraph{Why this matters.} A 5\% error in surface area is large compared with the effects such
-measurements are used to detect, for example differences between catalyst batches or the deviation of
-a printed lattice from its design. Errors of this size are typical for small or noisy objects
-(Section~\ref{sec:results}). A correction learned once on synthetic data is cheap to apply to every new
-object.
+\subsection{Motivation}
+A 5\% error in surface area is large compared with the effects such measurements are used to detect,
+for example differences between catalyst batches or the deviation of a printed lattice from its design.
+Errors of this size are typical for small or noisy objects (Section~\ref{sec:results}). A correction
+learned once on synthetic data is cheap to apply to every new object.

@@ -21,7 +21,7 @@ are benchmarked against four classical estimators and two calibrated baselines
 | Random Forest | 0.72% | **0.18%** |
 | 3D CNN | **0.68%** | 0.26% |
 
-Full tables: `results/tables.md`; article: `paper/main.pdf`.
+Full tables: `results/tables.md`; article: `paper/Project51_ManasJain_Article.pdf`.
 
 ## Repository layout
 
@@ -46,7 +46,7 @@ tests/
 weights/            trained model weights
 results/            CSV tables of predictions and metrics, tables.md
 figures/            plots used in the report
-paper/              preprint article (LaTeX source and main.pdf)
+paper/              preprint article (LaTeX source and PDF)
 slides/             presentation (.pptx) and the script that builds it
 ```
 

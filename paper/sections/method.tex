@@ -1,5 +1,5 @@
 \subsection{Data}
-Five shape families are used for training: spheres (150 shapes), ellipsoids (350), capped cylinders
+Table~\ref{tab:families} lists the seven shape families. Five are used for training: spheres (150 shapes), ellipsoids (350), capped cylinders
 (300), tori (300) and smooth random blobs (900), the last being star-shaped surfaces built from six
 low-frequency waves on the sphere. Two families are held out for testing only: superellipsoids (200),
 with pointed tips or box-like rounded edges, and rough blobs (200), which add ten high-frequency waves.
@@ -10,10 +10,39 @@ with $\sigma_n\in\{0, 0.05, 0.15\}$ relative to unit contrast, stored as 8-bit i
 rendered at $N=32$ and $64$ and all three noise levels, giving six volumes per shape and 14,400 in total.
 The split is by shape (70/15/15 within each training family, fixed seed 51), so all six volumes of a
 shape stay together: 1,400 training, 299 validation and 301 test shapes, plus the 400 held-out shapes.
+Figure~\ref{fig:slices} shows one shape at both resolutions and all noise levels.
+
+\begin{table*}[t]
+  \centering\small
+  \caption{Shape families. Parameters are drawn uniformly from the given ranges; all shapes are
+  normalised to maximum extent 1 before placement.}
+  \label{tab:families}
+  \begin{tabular}{llrl}
+    \toprule
+    Family & Role & Shapes & Parameters \\
+    \midrule
+    Sphere & train & 150 & radius 1 \\
+    Ellipsoid & train & 350 & $a=1$, $b,c\in[0.35,1]$ \\
+    Cylinder (capped) & train & 300 & radius $\in[0.3,0.85]$, half-height $\sqrt{1-\rho^2}$ \\
+    Torus & train & 300 & $r/R\in[0.2,0.6]$, $R+r=1$ \\
+    Smooth blob & train & 900 & 6 waves, $\omega\in[1,3]$, s.d.\ of $\log r\in[0.15,0.30]$ \\
+    \midrule
+    Superellipsoid & held out & 200 & $b,c\in[0.45,1]$; $p\in[1.5,1.8]$ (40\%) or $[3,6]$ (60\%) \\
+    Rough blob & held out & 200 & smooth blob $+$ 10 waves, $\omega\in[8,14]$, s.d.\ $\in[0.02,0.05]$ \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.9\linewidth]{example_meshes.png}
+  \includegraphics[width=\columnwidth]{example_slices.png}
+  \caption{Central slice through the same random blob at both resolutions and all three noise levels.}
+  \label{fig:slices}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{example_meshes.png}
   \caption{Reference surface of a rough blob and the marching-cubes meshes from its clean $32^3$ volume.
   The binary mesh is a staircase; the greyscale mesh is smooth but loses the finest detail.}
   \label{fig:meshes}

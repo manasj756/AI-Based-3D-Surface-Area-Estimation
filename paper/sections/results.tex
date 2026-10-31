@@ -15,13 +15,13 @@ because more voxels means more noise specks. Greyscale marching cubes is too sma
 Because these effects have opposite signs, its error is not smallest on clean data. Smoothing removes
 most of the noise error at $64^3$ but costs 13.8\% at $32^3$, where most objects are small.
 
-\begin{figure}[t]
+\begin{figure*}[t]
   \centering
-  \includegraphics[width=\linewidth]{bias_vs_resolution.png}
+  \includegraphics[width=0.85\textwidth]{bias_vs_resolution.png}
   \caption{Mean signed error ($\pm$1 s.d.) of the marching-cubes estimators against grid size for 48
   test shapes. Learned models are shown at the two sizes they were trained on.}
   \label{fig:sweep}
-\end{figure}
+\end{figure*}
 
 \subsection{Learned and calibrated corrections}
 Every correction improves on raw greyscale marching cubes by a large factor. The lookup table already
@@ -39,9 +39,11 @@ The learned models are nearly insensitive to noise (Table~\ref{tab:noise}): at $
 goes from 0.20\% on clean data to 0.40\% at $\sigma_n=0.15$, while greyscale marching cubes goes from
 1.13\% to 8.56\%. Object size matters more than grid size. For objects less than 16 voxels across,
 greyscale marching cubes has a MAPE of 6.43\%, the Random Forest 1.41\% and the CNN 1.24\%, the size
-class where the CNN has its clearest advantage. Above 48 voxels the Random Forest reaches 0.08\%.
+class where the CNN has its clearest advantage. Above 48 voxels the Random Forest reaches 0.08\%
+(Table~\ref{tab:diameter}).
 
 \input{tables/noise}
+\input{tables/diameter}
 
 \subsection{Unseen shape families and a failure case}
 Both held-out families stay far below the classical errors (Fig.~\ref{fig:heldout}). On
@@ -49,7 +51,9 @@ superellipsoids, whose sharp edges do not occur in training, the CNN reaches 1.0
 Random Forest 0.73\% and 0.39\%, against 4.10\% and 3.38\% for greyscale marching cubes. Rough blobs are
 the hardest case (CNN 1.96\%, Random Forest 1.71\% at $32^3$), with corrections biased low: the models
 were trained on smooth shapes and cannot add back area hidden in sub-voxel roughness. At $64^3$ the
-error falls to about 0.5\%.
+error falls to about 0.5\%. Table~\ref{tab:family} breaks the results down by family.
+
+\input{tables/family}
 
 The error distributions are heavy-tailed at $32^3$. The worst case is a test torus whose tube is 1.77
 voxels thick: after blurring most of the tube stays below the iso-level, so greyscale marching cubes
@@ -68,10 +72,10 @@ Table~\ref{tab:regime} summarises when a learned correction is worth the effort.
 where the classical methods are weakest: small objects, coarse grids and noisy data.
 
 \begin{table}[t]
-  \centering\small
+  \centering\footnotesize
   \caption{Recommended estimator by regime, based on the test results.}
   \label{tab:regime}
-  \begin{tabular}{p{4.2cm}p{10cm}}
+  \begin{tabular}{p{2.3cm}p{5.6cm}}
     \toprule
     Regime & Recommendation \\
     \midrule

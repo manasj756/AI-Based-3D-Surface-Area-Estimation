@@ -11,8 +11,16 @@ face-count area per unit true area is
   r(\mathbf n) = |n_x| + |n_y| + |n_z|, \qquad 1 \le r \le \sqrt3 .
 \end{equation}
 It equals 1 only for surfaces aligned with the grid. For random orientations each $|n_i|$ averages $1/2$,
-so $r$ averages $3/2$: a 50\% overestimate that does not depend on the voxel size. On a clean sphere at
-$128^3$ we measure $+50.03\%$.
+so $r$ averages $3/2$ (Fig.~\ref{fig:facetheory}): a 50\% overestimate that does not depend on the
+voxel size. On a clean sphere at $128^3$ we measure $+50.03\%$.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.9\columnwidth]{face_count_theory.png}
+  \caption{Face-count area per unit true area, $|n_x|+|n_y|+|n_z|$, for a plane whose normal makes the
+  given polar angle with the $z$ axis. The average over all orientations is $3/2$.}
+  \label{fig:facetheory}
+\end{figure}
 
 \subsection{Marching cubes on binary and greyscale volumes}
 On a binary volume, marching cubes places every vertex at an edge midpoint, so only a few triangle

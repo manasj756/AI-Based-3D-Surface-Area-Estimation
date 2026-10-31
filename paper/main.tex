@@ -1,5 +1,4 @@
-\documentclass[11pt]{article}
-\usepackage[a4paper,margin=2.3cm]{geometry}
+\documentclass[journal]{IEEEtran}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
@@ -7,33 +6,32 @@
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{xcolor}
 \usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
-\usepackage{caption}
-\captionsetup{font=small,labelfont=bf}
 \graphicspath{{../figures/}}
-\newcommand{\pending}[1]{\textcolor{red}{[#1]}}
-
-\title{Learned bias correction for surface-area estimation\\ from CT-like voxel data}
-\author{Manas Jain\\[2pt]
-\small Department of Physics, Indian Institute of Technology Roorkee, India}
-\date{}
 
 \begin{document}
+\title{Learned Bias Correction for Surface-Area\\ Estimation from CT-like Voxel Data}
+\author{Manas Jain}
 \maketitle
 
 \begin{abstract}
 \input{sections/abstract}
 \end{abstract}
 
+\begin{IEEEkeywords}
+Computed tomography, surface area, marching cubes, partial-volume effect, deep learning, 3D CNN,
+PointNet, synthetic data.
+\end{IEEEkeywords}
+
 \section{Introduction}\label{sec:intro}
 \input{sections/intro}
 
-\section{Problem, objectives and motivation}\label{sec:problem}
+\section{Problem, Objectives and Motivation}\label{sec:problem}
 \input{sections/problem}
 
 \section{Theory}\label{sec:theory}
 \input{sections/theory}
 
-\section{Previous work}\label{sec:previous}
+\section{Previous Work}\label{sec:previous}
 \input{sections/previous}
 
 \section{Method}\label{sec:method}
@@ -48,14 +46,14 @@
 \section{Limitations}\label{sec:limitations}
 \input{sections/limitations}
 
-\section*{Code and data availability}
+\section*{Code and Data Availability}
 Code, trained weights and result tables are in the project repository; the dataset is fixed by its
 generation script and seed (51) and is shared alongside the code.
 
-\appendix
+\appendices
 \input{sections/appendix}
 
-\bibliographystyle{unsrtnat}
+\bibliographystyle{IEEEtranN}
 \bibliography{refs}
 
 \end{document}

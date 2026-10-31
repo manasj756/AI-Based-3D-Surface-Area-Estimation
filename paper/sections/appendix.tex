@@ -19,7 +19,7 @@ the curvature term dominates; at $64^3$ the remaining discrepancy is of the same
 interpolation error of marching cubes itself.
 
 \begin{table}[h]
-  \centering\small
+  \centering\footnotesize\setlength{\tabcolsep}{3pt}
   \caption{Greyscale marching-cubes error on clean spheres: measured vs the curvature prediction
   $-2\sigma_\text{eff}^2/R^2$ from Eq.~\eqref{eq:shift}. $R$ in voxels.}
   \label{tab:curvature}
@@ -40,8 +40,10 @@ interpolation error of marching cubes itself.
 \section{Reference surface areas}\label{app:reference}
 Spheres, cylinders and tori have closed-form areas. For an ellipsoid with semi-axes $a\ge b\ge c$,
 \begin{equation}
-  A = 2\pi c^2 + \frac{2\pi ab}{\sin\varphi}\left[E(\varphi,m)\sin^2\varphi + F(\varphi,m)\cos^2\varphi\right],
-  \quad \cos\varphi = \frac ca,\quad m = \frac{a^2(b^2-c^2)}{b^2(a^2-c^2)},
+\begin{aligned}
+  A &= 2\pi c^2 + \frac{2\pi ab}{\sin\varphi}\left[E(\varphi,m)\sin^2\varphi + F(\varphi,m)\cos^2\varphi\right],\\
+  \cos\varphi &= \frac ca,\qquad m = \frac{a^2(b^2-c^2)}{b^2(a^2-c^2)},
+\end{aligned}
 \end{equation}
 with $F$ and $E$ the incomplete elliptic integrals of the first and second kind. The remaining
 families (random blobs and superellipsoids) are star-shaped, i.e.\ their surface is
