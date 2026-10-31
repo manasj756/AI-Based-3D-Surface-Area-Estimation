@@ -1,25 +1,13 @@
-\begin{itemize}
-  \item \textbf{Simplified physics.} The forward model is partial-volume averaging, a Gaussian PSF and
-        white Gaussian noise added in the image domain. Real CT noise is correlated by the
-        reconstruction filter and is signal dependent, and real volumes contain beam-hardening, ring and
-        streak artefacts. A projection-domain simulation (forward projection, Poisson noise, filtered
-        back-projection) would be the natural next step.
-  \item \textbf{One isolated object per volume.} Porous media and lattices consist of many connected or
-        touching structures, and the correction may depend on how much of the surface is close to other
-        surfaces. The models have not been tested on such data.
-  \item \textbf{Fixed acquisition parameters.} Blur, contrast and the iso-level are fixed, and the models
-        are trained at two grid sizes and three noise levels. Their behaviour between and outside these
-        settings is untested; in particular, a model trained at $\sigma_n\le0.15$ should not be trusted at
-        higher noise.
-  \item \textbf{Sub-voxel roughness is not observable.} Surface detail much smaller than a voxel does not
-        survive voxelization. A learned model can only add back the excess area it expects from the
-        roughness statistics of its training data, so its correction on rough surfaces is a prior, not
-        a measurement, and it will be wrong if the real roughness spectrum differs.
-  \item \textbf{Limited shape space.} The training shapes are star-shaped or of genus at most one.
-        Shapes with many handles, thin sheets or concave pockets are not represented.
-  \item \textbf{No tuning, single seed.} Architectures and hyperparameters were fixed in advance, the
-        $64^3$ CNN was trained for only 15 epochs because of the compute budget (a single laptop), and
-        each model was trained once. Differences of a few hundredths of a percent between models should
-        not be over-interpreted.
-  \item \textbf{Real data.} No measurement on a real CT scan with a known surface area is included.
+\begin{itemize}\setlength\itemsep{1pt}
+  \item \textbf{Simplified physics.} Noise is white and added in the image domain; real CT noise is
+        correlated and signal dependent, and real volumes have beam-hardening, ring and streak artefacts.
+  \item \textbf{One isolated object per volume.} Porous media and lattices with many touching
+        structures are untested.
+  \item \textbf{Fixed acquisition.} Two grid sizes, three noise levels and a fixed blur; behaviour
+        outside this range is untested.
+  \item \textbf{Sub-voxel roughness.} On rough surfaces the correction is a learned prior, not a
+        measurement.
+  \item \textbf{Limited shapes, no tuning.} Training shapes are star-shaped or of genus one; there was
+        no hyperparameter tuning, each model was trained once, and the $64^3$ CNN only for 15 epochs.
+  \item \textbf{No real scan.} No measurement on a real CT scan with a known surface area is included.
 \end{itemize}

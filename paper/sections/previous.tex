@@ -1,32 +1,12 @@
-\paragraph{Mesh-based measurement.} Marching cubes \citep{lorensen1987} is the standard way to extract
-an iso-surface from a voxel volume; we use the topologically consistent variant of \citet{lewiner2003}
-as implemented in scikit-image \citep{vanderwalt2014}. \citet{nystrom2002} compared areas of digital
-(voxel-face) surfaces and triangulated surfaces on phantoms and real objects and found the
-triangulated areas considerably more accurate, with errors decreasing as the voxel size decreased.
-
-\paragraph{Local estimators and multigrid convergence.} A large body of work in digital geometry
-estimates surface area from binary volumes by assigning a weight to each local $2\times2\times2$
-configuration. \citet{mullikin1993} derived optimal weights for digitized planes, and
-\citet{windreich2003} and \citet{lindblad2005} optimised local configuration weights to minimise the
-bias for isotropically oriented surfaces. A central theoretical question is multigrid convergence,
-i.e.\ whether the estimate converges to the true area as the grid is refined. \citet{kenmochi2000}
-showed that local polyhedrization schemes such as marching cubes on binary data are not multigrid
-convergent even for spheres, cubes and cylinders, and \citet{svane2013} proved that no local digital
-algorithm for surface area is multigrid convergent on the class of convex polytopes.
-\citet{ziegel2010} studied design-based surface-area estimation from digitizations with random grid
-placement. \citet{klette2004} give a general account. These results explain why the binary estimators
-in this work keep a resolution-independent bias, and they motivate using greyscale information.
-
-\paragraph{Learning-based estimation.} Deep networks operating directly on voxel grids
-\citep{maturana2015} and on unordered point sets \citep{qi2017} are established tools for 3D shape
-analysis. For CT of porous materials, \citet{rabbani2020} trained a convolutional network to predict a
-range of morphological, hydraulic, electrical and mechanical properties of porous samples from 3D
-images in a fraction of the time of image-based simulation. Random Forests \citep{breiman2001} on
-hand-crafted descriptors remain a strong baseline for small tabular problems.
-
-\paragraph{Gap.} The work above either derives fixed estimators for binary data or learns global
-properties of complex microstructures, where an exact ground truth is not available. We did not find a
-study that measures how much a learned model reduces surface-area bias relative to marching cubes
-against an exact reference, separately for resolution, noise level and unseen shape families, and that
-compares deep models with a calibrated feature-based baseline. That comparison is the subject of this
-work.
+Marching cubes \citep{lorensen1987} is the standard way to extract a surface from a voxel volume; we use
+the variant of \citet{lewiner2003} in scikit-image \citep{vanderwalt2014}. \citet{nystrom2002} found
+triangulated surfaces considerably more accurate than voxel-face surfaces. In digital geometry,
+\citet{mullikin1993}, \citet{windreich2003} and \citet{lindblad2005} derived optimal weights for local
+$2\times2\times2$ voxel configurations. On convergence, \citet{kenmochi2000} showed that binary marching
+cubes does not converge to the true area even for spheres, and \citet{svane2013} proved that no local
+estimator converges on convex polytopes (see also \citet{ziegel2010,klette2004}). On the learning side,
+3D CNNs \citep{maturana2015} and PointNet \citep{qi2017} are established tools, and
+\citet{rabbani2020} predicted properties of porous media from micro-CT with a CNN, without an exact
+ground truth for surface area. We did not find a study that measures, against an exact reference, how
+much a learned model reduces the surface-area error of marching cubes, separately by resolution, noise
+and unseen shape family, and compares it with a simple feature-based baseline \citep{breiman2001}.

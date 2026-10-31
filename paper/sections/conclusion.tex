@@ -1,27 +1,13 @@
 The errors of the classical surface-area methods are not random, and that is what makes them
-correctable. Counting voxel faces is always about 50\% too high, because a staircase has more area than
-the smooth surface it follows. Marching cubes on a thresholded (black-and-white) volume keeps an error
-that does not shrink at higher resolution. Marching cubes on the greyscale volume is pulled down on
-curved surfaces, by an amount that a simple blurring argument predicts well, and pushed up by noise.
-Since both effects depend on the object and on the scan, no single correction factor can remove them.
+correctable. Voxel-face counting is always about 50\% too high, binary marching cubes keeps an error that
+does not shrink with resolution, and greyscale marching cubes is pulled down on curved surfaces, by an
+amount a simple blurring argument predicts, and pushed up by noise.
 
-A correction learned from synthetic shapes with known area removes most of the error. On test shapes it
-cuts the error of greyscale marching cubes from 4.78\% to 0.68\% at $32^3$ and from 3.52\% to 0.18\% at
-$64^3$. It barely changes with noise, and it still works, with errors below 2\%, on shapes with sharp
-edges or rough surfaces that were never in the training data.
-
-The most useful practical result is the comparison between models. A Random Forest on ten simple
-measurements of the volume does as well as a 3D CNN with 3.6 million parameters, and is the best model
-for large objects. Its two most useful measurements are the Euler number (roughly, the number of
-separate pieces and cavities minus the number of tunnels, which counts the noise specks) and an estimate of the noise
-level. The CNN is worth its extra cost
-mainly for small objects on coarse grids. PointNet, which only sees points on the noisy marching-cubes
-surface, is clearly worse than the models that see the whole volume.
-
-Two cases are still not solved. Structures thinner than about two voxels disappear from the
-marching-cubes mesh before any correction can be applied, and roughness smaller than one voxel is
-simply not present in the image.
-
-Natural next steps are a more realistic CT simulation (simulating the X-ray projections and the
-reconstruction, not only blur and noise), volumes with many touching structures such as foams and
-lattices, and a test on a real scan of an object whose surface area is known.
+A correction learned from synthetic shapes with known area removes most of this error. On test shapes
+it cuts the error of greyscale marching cubes from 4.78\% to 0.68\% at $32^3$ and from 3.52\% to 0.18\% at
+$64^3$, barely changes with noise, and stays below 2\% on shape families never seen in training. A
+Random Forest on ten simple measurements does as well as a 3D CNN with 3.6 million parameters; the CNN
+is worth its extra cost mainly for small objects on coarse grids. Structures thinner than about two
+voxels and roughness smaller than one voxel remain out of reach, because the information is no longer
+in the image. Natural next steps are a more realistic CT simulation, volumes with many touching
+structures, and a test on a real scan of an object with a known surface area.

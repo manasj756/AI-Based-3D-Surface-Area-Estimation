@@ -1,28 +1,16 @@
-Surface area is one of the most requested measurements in X-ray computed tomography (CT) of
-materials and parts. It controls reaction rates in catalysts, flow and filtration behaviour in porous
-media, and the quality of additively manufactured lattices. In practice it is measured from a
-reconstructed voxel volume, either by counting the exposed faces of segmented voxels or by extracting a
-triangle mesh with marching cubes \citep{lorensen1987} and summing the triangle areas.
+Surface area is one of the most requested measurements in X-ray computed tomography (CT) of materials
+and parts. It controls reaction rates in catalysts, flow in porous media and the quality of additively
+manufactured lattices. It is usually measured from the reconstructed voxel volume, either by counting
+the exposed faces of segmented voxels or by extracting a triangle mesh with marching cubes
+\citep{lorensen1987} and summing the triangle areas.
 
 Both routes are biased. Counting voxel faces measures the area of a staircase, which is about 50\%
 larger than the true surface at every resolution. Marching cubes on a thresholded (binary) volume is
-better, but it is a local method with a finite set of triangle orientations and its bias does not
-vanish as the voxel size shrinks \citep{kenmochi2000,svane2013}. Marching cubes on the greyscale
-volume uses the partial-volume information and converges for clean, well-resolved data, but real CT
-volumes are noisy and many structures of interest are only a few voxels across. Noise roughens the
-extracted surface and adds small spurious components, while smoothing the volume to suppress noise
-shrinks curved surfaces and can erase thin features altogether.
+better, but its error does not vanish as the voxels get smaller \citep{kenmochi2000,svane2013}.
+Marching cubes on the greyscale volume is accurate for clean, well-resolved data, but real CT volumes
+are noisy and many structures are only a few voxels across. Because the error depends on resolution,
+noise, curvature and thin features at the same time, a single correction factor cannot remove it.
 
-The size and sign of the error therefore depend on resolution, noise, curvature and topology at the
-same time, which makes a single fixed correction factor inadequate. This is a natural setting for a
-learned correction: a model that looks at the volume, or at simple measurements computed from it, and predicts
-how far the classical measurement is from the truth for that particular object. Training such a model
-needs ground truth, which is only available exactly for synthetic objects.
-
-This work builds a synthetic CT-like dataset of seven shape families with reference surface areas that
-are exact or converged to better than $10^{-4}$, renders them at two resolutions and three noise
-levels, and compares four classical estimators, two simple calibrated corrections and two learned
-models (a 3D convolutional network that sees the whole volume, and a PointNet that sees points on the
-marching-cubes surface). The models predict a multiplicative correction to
-the greyscale marching-cubes area, so that learning acts as a bias-correction layer on top of the
-classical measurement rather than replacing it.
+This work builds a synthetic CT-like dataset with exactly known surface areas and trains models that
+predict a correction to the greyscale marching-cubes area for each object, so that learning acts as a
+correction layer on top of the classical measurement rather than replacing it.
