@@ -47,7 +47,7 @@ weights/            trained model weights
 results/            CSV tables of predictions and metrics, tables.md
 figures/            plots used in the report
 paper/              preprint article (LaTeX source and PDF)
-slides/             presentation (.pptx) and the script that builds it
+slides/             presentation: Beamer source (beamer/slides.tex), PDF, and the .pptx made from it
 ```
 
 ## Setup
@@ -72,6 +72,8 @@ python src/sweep.py --per_family 8 --workers 6               # resolution sweep
 python src/curvature_check.py                                # sphere curvature table
 python src/figures_extra.py                                  # explanatory figures
 python src/report_tables.py                                  # LaTeX tables for the article
+(cd slides/beamer && latexmk -pdf slides.tex)                # slides (Beamer PDF)
+python slides/make_pptx.py                                   # .pptx from the Beamer PDF
 ```
 
 Training used PyTorch's MPS backend on an Apple-silicon laptop (about 60 s per
